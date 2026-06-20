@@ -208,6 +208,31 @@ export default function AdminPage() {
     } catch { setError('Gagal update plan') }
   }
 
+  const handleTenantAction = async (action: string, data: any) => {
+    try {
+      const res = await fetch('/api/admin/cross-app', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ app: tab, action, data }),
+      })
+      const result = await res.json()
+      if (res.ok) {
+        setSuccess(`Tenant berhasil di-${action === 'deleteTenant' ? 'hapus' : 'update'}`)
+        fetchCrossUsers(tab)
+      } else {
+        setError(result.error || 'Gagal')
+      }
+    } catch { setError('Gagal aksi tenant') }
+  }
+
+  const handleCreateTenant = async () => {
+    const nama = prompt('Nama Toko:')
+    if (!nama) return
+    const slug = nama.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20)
+    const useSlug = prompt(`Slug (tekan Enter untuk "${slug}"):`, slug)
+    handleTenantAction('createTenant', { namaToko: nama, slug: useSlug || slug })
+  }
+
   if (status === 'loading' || loading) return (
     <div className="min-h-[100dvh] flex items-center justify-center bg-slate-900">
       <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -380,7 +405,12 @@ export default function AdminPage() {
             {/* Tenant Plan Info (ZGold, ZBengkel) */}
             {(crossExtra as any)?.tenants && (crossExtra as any).tenants.length > 0 && (
               <div className="mb-5">
-                <h4 className="text-xs font-bold text-slate-400 uppercase mb-3">Tenant Plans</h4>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase">Tenant Plans</h4>
+                  {tab === 'zgold' || tab === 'zbengkel' ? (
+                    <button onClick={handleCreateTenant} className="text-[10px] px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg">+ Tambah Tenant</button>
+                  ) : null}
+                </div>
                 <div className="space-y-2">
                   {(crossExtra as any).tenants.map((t: any) => (
                     <div key={t.tenantId || t.id} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3">
@@ -416,6 +446,21 @@ export default function AdminPage() {
                           Expired: {new Date(t.planExpires).toLocaleDateString('id-ID')}
                         </div>
                       )}
+                      <div className="flex gap-2 mt-2">
+                        <button onClick={() => {
+                          const newNama = prompt('Nama baru:', t.tenantName || t.namaToko)
+                          if (newNama) handleTenantAction('updateTenant', { tenantId: t.tenantId || t.id, namaToko: newNama })
+                        }} className="text-[10px] px-2 py-1 bg-slate-800 text-slate-400 border border-slate-700 rounded-lg hover:border-slate-500">
+                          ✏️ Edit
+                        </button>
+                        <button onClick={() => {
+                          if (confirm(`Hapus tenant "${t.tenantName || t.namaToko}"? Semua user di tenant ini juga akan dihapus!`)) {
+                            handleTenantAction('deleteTenant', { tenantId: t.tenantId || t.id })
+                          }
+                        }} className="text-[10px] px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg">
+                          🗑️ Hapus
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -425,7 +470,20 @@ export default function AdminPage() {
             {/* ZFace Organizations */}
             {(crossExtra as any)?.organizations && (crossExtra as any).organizations.length > 0 && (
               <div className="mb-5">
-                <h4 className="text-xs font-bold text-slate-400 uppercase mb-3">Organizations</h4>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase">Organizations</h4>
+                  <button onClick={async () => {
+                    const name = prompt('Nama Organization:')
+                    if (!name) return
+                    const res = await fetch('/api/admin/cross-app', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ app: 'zface', action: 'createOrg', data: { name } }),
+                    })
+                    if (res.ok) { setSuccess('Organization dibuat!'); fetchCrossUsers('zface') }
+                    else { setError('Gagal buat org') }
+                  }} className="text-[10px] px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg">+ Tambah Org</button>
+                </div>
                 <div className="space-y-2">
                   {(crossExtra as any).organizations.map((org: any) => (
                     <div key={org.id} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3">
@@ -456,6 +514,21 @@ export default function AdminPage() {
                       </div>
                       <div className="text-[10px] text-slate-500">
                         Quota: {org.quota || 'Unlimited'} wajah · {org.expires_at ? `Exp: ${new Date(org.expires_at).toLocaleDateString('id-ID')}` : 'Active'}
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        <button onClick={async () => {
+                          if (confirm(`Hapus organization "${org.name}"? Semua wajah di org ini juga akan dihapus!`)) {
+                            await fetch('/api/admin/cross-app', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ app: 'zface', action: 'deleteOrg', data: { orgId: org.id } }),
+                            })
+                            setSuccess('Organization dihapus')
+                            fetchCrossUsers('zface')
+                          }
+                        }} className="text-[10px] px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg">
+                          🗑️ Hapus
+                        </button>
                       </div>
                     </div>
                   ))}

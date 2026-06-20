@@ -35,22 +35,29 @@ export async function POST(req: Request) {
     }
 
     // 2. Find user in ZOne database
-    // Strategy: Match by email first, then by name
     let user = null
 
+    // If email provided, try email match first
     if (email) {
-      // Try email match first
       user = await prisma.user.findUnique({ where: { email } })
     }
 
+    // If no user found, find by name (case-insensitive, partial match)
     if (!user) {
-      // Try name match (case-insensitive, partial)
       const allUsers = await prisma.user.findMany()
-      user = allUsers.find(u => {
-        const userName = u.name.toLowerCase().trim()
-        const faceName = personName.toLowerCase().trim()
-        return userName.includes(faceName) || faceName.includes(userName.split(' ')[0])
-      })
+      const faceName = personName.toLowerCase().trim()
+      
+      // Try exact name match first
+      user = allUsers.find(u => u.name.toLowerCase().trim() === faceName)
+      
+      // If no exact match, try partial match (first name)
+      if (!user) {
+        const firstName = faceName.split(' ')[0]
+        user = allUsers.find(u => {
+          const userName = u.name.toLowerCase().trim()
+          return userName.includes(firstName) || firstName.includes(userName.split(' ')[0])
+        })
+      }
     }
 
     if (!user) {

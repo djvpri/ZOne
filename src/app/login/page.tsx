@@ -42,13 +42,8 @@ export default function LoginPage() {
     else router.push('/dashboard')
   }
 
-  // Face login — proper flow
+  // Face login — no email needed!
   const handleFaceLogin = async () => {
-    if (!email) {
-      setError('Masukkan email terlebih dahulu')
-      return
-    }
-
     setLoading(true)
     setError('')
     setFaceStatus('Mengaktifkan kamera...')
@@ -79,7 +74,7 @@ export default function LoginPage() {
         canvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.8)
       })
 
-      // 4. Send to ZFace /api/auth/face-login (no org_id needed)
+      // 4. Send to ZFace via proxy (same-origin)
       setFaceStatus('Memverifikasi wajah...')
       const formData = new FormData()
       formData.append('file', blob, 'face.jpg')
@@ -117,17 +112,18 @@ export default function LoginPage() {
       }
 
       if (!zfaceData) throw new Error('Gagal menghubungi ZFace')
+
       const personName = zfaceData.person.name
       const similarity = zfaceData.person.similarity
       const faceToken = zfaceData.access_token
 
       setFaceStatus(`✓ ${personName} (${(similarity * 100).toFixed(0)}%) — Login...`)
 
-      // 5. Send face token to ZOne /api/auth/face-verify
+      // 5. Send face token to ZOne (auto-find user by name, no email needed)
       const verifyRes = await fetch('/api/auth/face-verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ faceToken, email }),
+        body: JSON.stringify({ faceToken }),  // No email!
       })
 
       if (!verifyRes.ok) {
@@ -221,13 +217,6 @@ export default function LoginPage() {
             </form>
           ) : (
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Email</label>
-                <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="admin@zone.id" />
-              </div>
-
               <div className="relative aspect-video bg-slate-800 rounded-lg overflow-hidden">
                 <video ref={videoRef} autoPlay playsInline muted
                   className={`w-full h-full object-cover ${cameraActive ? '' : 'hidden'}`} />
@@ -236,7 +225,7 @@ export default function LoginPage() {
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
                       <span className="text-4xl mb-2 block">📷</span>
-                      <p className="text-slate-400 text-sm">Kamera belum aktif</p>
+                      <p className="text-slate-400 text-sm">Klik tombol di bawah untuk mulai</p>
                     </div>
                   </div>
                 )}

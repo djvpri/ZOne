@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   session: { strategy: 'jwt' },
   pages: { signIn: '/login' },
   providers: [
@@ -15,11 +16,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
-        const user = await prisma.user.findUnique({ where: { email: credentials.email as string } })
-        if (!user) return null
-        const valid = await bcrypt.compare(credentials.password as string, user.password)
-        if (!valid) return null
-        return { id: user.id, name: user.name, email: user.email, role: user.role } as any
+        try {
+          const user = await prisma.user.findUnique({ where: { email: credentials.email as string } })
+          if (!user) return null
+          const valid = await bcrypt.compare(credentials.password as string, user.password)
+          if (!valid) return null
+          return { id: user.id, name: user.name, email: user.email, role: user.role, plan: user.plan } as any
+        } catch (e) {
+          console.error('Auth error:', e)
+          return null
+        }
       },
     }),
   ],
@@ -28,13 +34,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id
         token.role = user.role
+        token.plan = user.plan
       }
       return token
     },
     async session({ session, token }: any) {
       if (session.user) {
-        session.user.id = token.id
-        session.user.role = token.role
+        session.user.id = token.id as string
+        session.user.role = token.role as string
+        session.user.plan = token.plan as string
       }
       return session
     },

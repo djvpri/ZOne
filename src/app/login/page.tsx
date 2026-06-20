@@ -79,11 +79,10 @@ export default function LoginPage() {
         canvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.8)
       })
 
-      // 4. Send to ZFace /api/auth/face-login
+      // 4. Send to ZFace /api/auth/face-login (no org_id needed)
       setFaceStatus('Memverifikasi wajah...')
       const formData = new FormData()
       formData.append('file', blob, 'face.jpg')
-      formData.append('org_id', process.env.NEXT_PUBLIC_ZFACE_ORG_ID || '1')
 
       const zfaceRes = await fetch('https://zface.zomet.my.id/api/auth/face-login', {
         method: 'POST',

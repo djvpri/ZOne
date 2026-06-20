@@ -27,28 +27,31 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Not a face login token' }, { status: 400 })
     }
 
+    const faceId = payload.sub  // face_id from ZFace
     const personName = payload.person_name
     const similarity = payload.similarity
 
-    if (!personName) {
-      return NextResponse.json({ error: 'No person identified' }, { status: 400 })
+    if (!faceId) {
+      return NextResponse.json({ error: 'No face ID in token' }, { status: 400 })
     }
 
-    // 2. Find user in ZOne database
+    // 2. Find user in ZOne database by faceId (exact match!)
     let user = null
 
-    // If email provided, try email match first
-    if (email) {
+    // Primary: match by faceId (permanent solution)
+    user = await prisma.user.findUnique({ where: { faceId } })
+
+    // Fallback: if email provided, try email match
+    if (!user && email) {
       user = await prisma.user.findUnique({ where: { email } })
     }
 
-    // If no user found, find by name (flexible matching)
-    if (!user) {
+    // Last resort: fuzzy name match (for backward compatibility)
+    if (!user && personName) {
       const allUsers = await prisma.user.findMany()
       const faceName = personName.toLowerCase().trim()
       const faceParts = faceName.split(/\s+/)
       
-      // Score-based matching
       let bestScore = 0
       for (const u of allUsers) {
         const userName = u.name.toLowerCase().trim()
@@ -56,16 +59,11 @@ export async function POST(req: Request) {
         
         let score = 0
         
-        // Exact match = 100
         if (userName === faceName) {
           score = 100
-        }
-        // Full name contains = 80
-        else if (userName.includes(faceName) || faceName.includes(userName)) {
+        } else if (userName.includes(faceName) || faceName.includes(userName)) {
           score = 80
-        }
-        // Any part matches = 60 per match
-        else {
+        } else {
           for (const fp of faceParts) {
             for (const up of userParts) {
               if (fp === up) score += 60
@@ -80,19 +78,27 @@ export async function POST(req: Request) {
         }
       }
       
-      // Require at least 30% match
       if (bestScore < 30) user = null
     }
 
     if (!user) {
       return NextResponse.json({
         error: `Wajah "${personName}" terdeteksi tapi tidak ada user yang cocok di ZOne`,
+        faceId,
         personName,
         similarity,
       }, { status: 404 })
     }
 
-    // 3. Return verified user info
+    // 3. If user doesn't have faceId linked yet, link it now
+    if (!user.faceId) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { faceId },
+      })
+    }
+
+    // 4. Return verified user info
     return NextResponse.json({
       success: true,
       id: user.id,
@@ -100,6 +106,7 @@ export async function POST(req: Request) {
       email: user.email,
       role: user.role,
       plan: user.plan,
+      faceId,
       personName,
       similarity,
     })

@@ -14,6 +14,7 @@ model User {
   password      String
   phone         String?
   avatar        String?
+  faceId        String?   @unique  // Link ke ZFace face_id
   role          Role      @default(USER)
   plan          Plan      @default(FREE)
   createdAt     DateTime  @default(now())

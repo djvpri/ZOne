@@ -2,6 +2,7 @@
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { InstallPrompt } from '../pwa-register'
 
 type App = {
   id: string; slug: string; name: string; description: string | null
@@ -199,6 +200,8 @@ export default function DashboardPage() {
           </button>
         </div>
       </nav>
+
+      <InstallPrompt />
     </div>
   )
 }

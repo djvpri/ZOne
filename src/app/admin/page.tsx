@@ -30,6 +30,13 @@ export default function AdminPage() {
   const [addPassword, setAddPassword] = useState('')
   const [addRole, setAddRole] = useState('USER')
   const [addLoading, setAddLoading] = useState(false)
+  const [showCrossAdd, setShowCrossAdd] = useState(false)
+  const [crossAppName, setCrossAppName] = useState('')
+  const [crossAppEmail, setCrossAppEmail] = useState('')
+  const [crossAppPhone, setCrossAppPhone] = useState('')
+  const [crossAppPassword, setCrossAppPassword] = useState('')
+  const [crossAppRole, setCrossAppRole] = useState('')
+  const [crossAppLoading, setCrossAppLoading] = useState(false)
 
   const isAdmin = (session?.user as any)?.role === 'ADMIN'
 
@@ -129,6 +136,53 @@ export default function AdminPage() {
     }
   }
 
+  const handleCrossAddUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setCrossAppLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/admin/cross-app', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          app: tab,
+          action: 'create',
+          data: {
+            name: crossAppName,
+            email: crossAppEmail,
+            password: crossAppPassword,
+            role: crossAppRole || undefined,
+            phone: crossAppPhone || undefined,
+          },
+        }),
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error || 'Gagal daftarkan user')
+
+      setSuccess(`User ${crossAppName} berhasil ditambahkan ke ${tab.toUpperCase()}!`)
+      setShowCrossAdd(false)
+      setCrossAppName(''); setCrossAppEmail(''); setCrossAppPhone(''); setCrossAppPassword(''); setCrossAppRole('')
+      fetchCrossUsers(tab)
+    } catch (err: any) {
+      setError(err.message || 'Gagal')
+    } finally {
+      setCrossAppLoading(false)
+    }
+  }
+
+  const handleCrossDelete = async (email: string, name: string) => {
+    if (!confirm(`Hapus user ${name} (${email}) dari ${tab.toUpperCase()}?\nTIDAK BISA DIBATALKAN!`)) return
+    try {
+      const res = await fetch('/api/admin/cross-app', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ app: tab, action: 'delete', email }),
+      })
+      if (res.ok) { setSuccess(`User ${name} dihapus dari ${tab.toUpperCase()}`); fetchCrossUsers(tab) }
+      else { const d = await res.json(); setError(d.error || 'Gagal hapus') }
+    } catch { setError('Gagal hapus user') }
+  }
+
   if (status === 'loading' || loading) return (
     <div className="min-h-[100dvh] flex items-center justify-center bg-slate-900">
       <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -224,26 +278,19 @@ export default function AdminPage() {
             </div>
 
             {/* Search + Add button */}
-            {tab === 'zone' && (
-              <div className="flex gap-2 mb-5">
-                <div className="relative flex-1">
-                  <input type="text" placeholder="Cari user..." value={search} onChange={e => setSearch(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
-                </div>
-                <button onClick={() => setShowAddUser(true)}
-                  className="flex-shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-3 rounded-xl active:scale-95 transition">
-                  + Tambah
-                </button>
-              </div>
-            )}
-            {tab !== 'zone' && (
-              <div className="relative mb-5">
+            <div className="flex gap-2 mb-5">
+              <div className="relative flex-1">
                 <input type="text" placeholder="Cari user..." value={search} onChange={e => setSearch(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
               </div>
-            )}
+              {tab !== 'settings' && (
+                <button onClick={() => tab === 'zone' ? setShowAddUser(true) : setShowCrossAdd(true)}
+                  className="flex-shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-3 rounded-xl active:scale-95 transition">
+                  + Tambah
+                </button>
+              )}
+            </div>
 
             {/* User list */}
             {crossLoading ? (
@@ -304,6 +351,10 @@ export default function AdminPage() {
                             className="text-[10px] px-2.5 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
                             🔑 Reset PW
                           </button>
+                          <button onClick={() => handleCrossDelete(user.email, user.name)}
+                            className="text-[10px] px-2.5 py-1.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">
+                            🗑️ Hapus
+                          </button>
                         </>
                       )}
                     </div>
@@ -318,7 +369,7 @@ export default function AdminPage() {
         )}
       </main>
 
-      {/* Add User Modal */}
+      {/* Add User Modal (ZOne) */}
       {showAddUser && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4" onClick={() => setShowAddUser(false)}>
           <div className="w-full sm:max-w-sm bg-slate-800 border border-slate-700 rounded-t-2xl sm:rounded-2xl p-5 pb-safe" onClick={e => e.stopPropagation()}>
@@ -326,10 +377,9 @@ export default function AdminPage() {
               <h3 className="text-white font-bold text-lg">Tambah User</h3>
               <button onClick={() => setShowAddUser(false)} className="text-slate-400 hover:text-white text-xl">×</button>
             </div>
-
             <form onSubmit={handleAddUser} className="space-y-3">
               <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Nama Lengkap *</label>
+                <label className="block text-xs text-slate-400 mb-1.5">Nama *</label>
                 <input type="text" value={addName} required onChange={e => setAddName(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
@@ -359,10 +409,63 @@ export default function AdminPage() {
                   ))}
                 </div>
               </div>
-
               <button type="submit" disabled={addLoading}
                 className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold rounded-xl py-3.5 mt-2 transition active:scale-[0.98]">
                 {addLoading ? 'Mendaftarkan...' : '✓ Daftarkan User'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add User Modal (Cross-app) */}
+      {showCrossAdd && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4" onClick={() => setShowCrossAdd(false)}>
+          <div className="w-full sm:max-w-sm bg-slate-800 border border-slate-700 rounded-t-2xl sm:rounded-2xl p-5 pb-safe" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-white font-bold text-lg">Tambah User ke {tab.toUpperCase()}</h3>
+              <button onClick={() => setShowCrossAdd(false)} className="text-slate-400 hover:text-white text-xl">×</button>
+            </div>
+            <form onSubmit={handleCrossAddUser} className="space-y-3">
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5">Nama *</label>
+                <input type="text" value={crossAppName} required onChange={e => setCrossAppName(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5">Email *</label>
+                <input type="email" value={crossAppEmail} required onChange={e => setCrossAppEmail(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5">No. HP</label>
+                <input type="tel" value={crossAppPhone} onChange={e => setCrossAppPhone(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5">Password *</label>
+                <input type="password" value={crossAppPassword} required minLength={6} onChange={e => setCrossAppPassword(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5">Role</label>
+                <div className="flex gap-2">
+                  {[
+                    { key: '', label: 'Default' },
+                    ...(tab === 'zgold' ? [{ key: 'kasir', label: 'Kasir' }, { key: 'owner', label: 'Owner' }] :
+                      tab === 'zbengkel' ? [{ key: 'KASIR', label: 'Kasir' }, { key: 'ADMIN', label: 'Admin' }, { key: 'MEKANIK', label: 'Mekanik' }] :
+                      [{ key: 'KASIR', label: 'Kasir' }, { key: 'ADMIN', label: 'Admin' }]),
+                  ].map(r => (
+                    <button key={r.key} type="button" onClick={() => setCrossAppRole(r.key)}
+                      className={`flex-1 py-2 text-xs font-medium rounded-lg border transition ${crossAppRole === r.key ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-900 text-slate-400 border-slate-700'}`}>
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <button type="submit" disabled={crossAppLoading}
+                className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold rounded-xl py-3.5 mt-2 transition active:scale-[0.98]">
+                {crossAppLoading ? 'Menambahkan...' : '✓ Tambah ke ' + tab.toUpperCase()}
               </button>
             </form>
           </div>

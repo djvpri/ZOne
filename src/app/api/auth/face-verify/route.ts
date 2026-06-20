@@ -105,7 +105,6 @@ export async function POST(req: Request) {
       name: user.name,
       email: user.email,
       role: user.role,
-      plan: user.plan,
       faceId,
       personName,
       similarity,

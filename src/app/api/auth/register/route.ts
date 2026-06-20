@@ -29,7 +29,6 @@ export async function POST(req: Request) {
         phone: phone || null,
         password: hashedPassword,
         role: 'USER',
-        plan: 'FREE',
       },
     })
 

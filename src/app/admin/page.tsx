@@ -402,16 +402,15 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* Tenant Plan Info (ZGold, ZBengkel) */}
-            {(crossExtra as any)?.tenants && (crossExtra as any).tenants.length > 0 && (
+            {/* Tenant Plans (ZGold, ZBengkel, ZLaundry) */}
+            {tab === 'zgold' || tab === 'zbengkel' || tab === 'zlaundry' ? (
               <div className="mb-5">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-xs font-bold text-slate-400 uppercase">Tenant Plans</h4>
-                  {tab === 'zgold' || tab === 'zbengkel' || tab === 'zlaundry' ? (
-                    <button onClick={handleCreateTenant} className="text-[10px] px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg">+ Tambah Tenant</button>
-                  ) : null}
+                  <button onClick={handleCreateTenant} className="text-[10px] px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg">+ Tambah Tenant</button>
                 </div>
-                <div className="space-y-2">
+                {(crossExtra as any)?.tenants && (crossExtra as any).tenants.length > 0 ? (
+                  <div className="space-y-2">
                   {(crossExtra as any).tenants.map((t: any) => (
                     <div key={t.tenantId || t.id} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3">
                       <div className="flex items-center justify-between mb-2">
@@ -464,26 +463,29 @@ export default function AdminPage() {
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="text-center text-slate-500 text-sm py-4">Belum ada tenant</div>
+              )}
+            </div>
+          ) : null}
 
             {/* ZFace Organizations */}
-            {(crossExtra as any)?.organizations && (crossExtra as any).organizations.length > 0 && (
-              <div className="mb-5">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase">Organizations</h4>
-                  <button onClick={async () => {
-                    const name = prompt('Nama Organization:')
-                    if (!name) return
-                    const res = await fetch('/api/admin/cross-app', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ app: 'zface', action: 'createOrg', data: { name } }),
-                    })
-                    if (res.ok) { setSuccess('Organization dibuat!'); fetchCrossUsers('zface') }
-                    else { setError('Gagal buat org') }
-                  }} className="text-[10px] px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg">+ Tambah Org</button>
-                </div>
+            <div className="mb-5">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-xs font-bold text-slate-400 uppercase">Organizations</h4>
+                <button onClick={async () => {
+                  const name = prompt('Nama Organization:')
+                  if (!name) return
+                  const res = await fetch('/api/admin/cross-app', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ app: 'zface', action: 'createOrg', data: { name } }),
+                  })
+                  if (res.ok) { setSuccess('Organization dibuat!'); fetchCrossUsers('zface') }
+                  else { setError('Gagal buat org') }
+                }} className="text-[10px] px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg">+ Tambah Org</button>
+              </div>
+              {(crossExtra as any)?.organizations && (crossExtra as any).organizations.length > 0 ? (
                 <div className="space-y-2">
                   {(crossExtra as any).organizations.map((org: any) => (
                     <div key={org.id} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3">
@@ -533,8 +535,10 @@ export default function AdminPage() {
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="text-center text-slate-500 text-sm py-4">Belum ada organizations</div>
+              )}
+            </div>
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-3 mb-5">

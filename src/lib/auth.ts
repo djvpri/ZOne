@@ -42,6 +42,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 email: user.email,
                 role: user.role,
                 plan: user.plan,
+                faceId: user.faceId,
               } as any
             }
             
@@ -62,6 +63,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             email: user.email,
             role: user.role,
             plan: user.plan,
+            faceId: user.faceId,
           } as any
         } catch (e) {
           console.error('Auth error:', e)
@@ -76,6 +78,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.id = user.id
         token.role = user.role
         token.plan = user.plan
+        token.faceId = (user as any).faceId || null
+      }
+      // Refresh faceId from DB on each token refresh
+      if (token.id && !token.faceId) {
+        try {
+          const { prisma } = require('@/lib/prisma')
+          const dbUser = await prisma.user.findUnique({ where: { id: token.id as string }, select: { faceId: true } })
+          if (dbUser?.faceId) token.faceId = dbUser.faceId
+        } catch {}
       }
       return token
     },
@@ -84,6 +95,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.id as string
         session.user.role = token.role as string
         session.user.plan = token.plan as string
+        ;(session.user as any).faceId = token.faceId || null
       }
       return session
     },

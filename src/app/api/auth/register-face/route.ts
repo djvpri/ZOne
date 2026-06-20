@@ -10,12 +10,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'File and name required' }, { status: 400 })
     }
 
-    // Forward to ZFace /api/register
+    // Forward to ZFace /api/register-public (no auth required)
     const zfaceFormData = new FormData()
     zfaceFormData.append('name', name)
     zfaceFormData.append('file', file)
 
-    const zfaceRes = await fetch('https://zface.zomet.my.id/api/register', {
+    const zfaceRes = await fetch('https://zface.zomet.my.id/api/register-public', {
       method: 'POST',
       body: zfaceFormData,
       signal: AbortSignal.timeout(30000),

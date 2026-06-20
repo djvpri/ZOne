@@ -470,6 +470,7 @@ export default function AdminPage() {
           ) : null}
 
             {/* ZFace — Tenant Plans */}
+            {(tab as string) === 'zface' && (
             <div className="mb-5">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-xs font-bold text-slate-400 uppercase">Tenant Plans</h4>
@@ -539,6 +540,7 @@ export default function AdminPage() {
                 <div className="text-center text-slate-500 text-sm py-4">Belum ada tenant</div>
               )}
             </div>
+            )}
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-3 mb-5">

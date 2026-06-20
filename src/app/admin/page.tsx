@@ -183,6 +183,27 @@ export default function AdminPage() {
     } catch { setError('Gagal hapus user') }
   }
 
+  const handleCrossPlanAction = async (tenantId: string, plan: string, planExpires?: string) => {
+    try {
+      const res = await fetch('/api/admin/cross-app', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          app: tab,
+          action: 'updatePlan',
+          data: { tenantId, plan, planExpires: planExpires || undefined },
+        }),
+      })
+      const result = await res.json()
+      if (res.ok) {
+        setSuccess(`Plan ${tab.toUpperCase()} diubah ke ${plan.toUpperCase()}`)
+        fetchCrossUsers(tab)
+      } else {
+        setError(result.error || 'Gagal update plan')
+      }
+    } catch { setError('Gagal update plan') }
+  }
+
   if (status === 'loading' || loading) return (
     <div className="min-h-[100dvh] flex items-center justify-center bg-slate-900">
       <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -319,6 +340,92 @@ export default function AdminPage() {
           </>
         ) : (
           <>
+            {/* Tenant Plan Info */}
+            {(crossData as any)?.tenants && (crossData as any).tenants.length > 0 && (
+              <div className="mb-5">
+                <h4 className="text-xs font-bold text-slate-400 uppercase mb-3">Tenant Plans</h4>
+                <div className="space-y-2">
+                  {(crossData as any).tenants.map((t: any) => (
+                    <div key={t.tenantId || t.id} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <span className="text-white text-sm font-medium">{t.tenantName || t.namaToko}</span>
+                          <span className="text-slate-500 text-xs ml-2">/{t.slug}</span>
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          (t.plan || 'free') === 'enterprise' ? 'bg-purple-500/20 text-purple-300' :
+                          (t.plan || 'free') === 'pro' ? 'bg-blue-500/20 text-blue-300' :
+                          (t.plan || 'free') === 'basic' ? 'bg-green-500/20 text-green-300' :
+                          'bg-slate-500/20 text-slate-400'
+                        }`}>
+                          {(t.plan || 'free').toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        {['free', 'basic', 'pro', 'enterprise'].map(p => (
+                          <button key={p} onClick={() => {
+                            const expires = prompt(`Tanggal expiry (YYYY-MM-DD) untuk plan ${p.toUpperCase()}:\nKosongkan untuk default 30 hari:`)
+                            handleCrossPlanAction(t.tenantId || t.id, p, expires || undefined)
+                          }}
+                            className={`text-[10px] px-2 py-1 rounded-lg border transition ${
+                              (t.plan || 'free') === p ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500'
+                            }`}>
+                            {p.charAt(0).toUpperCase() + p.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                      {t.planExpires && (
+                        <div className="text-[10px] text-slate-500 mt-1">
+                          Expired: {new Date(t.planExpires).toLocaleDateString('id-ID')}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ZFace Organizations */}
+            {(crossData as any)?.organizations && (crossData as any).organizations.length > 0 && (
+              <div className="mb-5">
+                <h4 className="text-xs font-bold text-slate-400 uppercase mb-3">Organizations</h4>
+                <div className="space-y-2">
+                  {(crossData as any).organizations.map((org: any) => (
+                    <div key={org.id} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <span className="text-white text-sm font-medium">{org.name}</span>
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          org.plan === 'enterprise' ? 'bg-purple-500/20 text-purple-300' :
+                          org.plan === 'pro' ? 'bg-blue-500/20 text-blue-300' :
+                          'bg-slate-500/20 text-slate-400'
+                        }`}>
+                          {org.plan?.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex gap-2 mb-2">
+                        {['starter', 'pro', 'enterprise'].map(p => (
+                          <button key={p} onClick={() => {
+                            const expires = prompt(`Tanggal expiry untuk plan ${p.toUpperCase()}:\nKosongkan untuk default 30 hari:`)
+                            handleCrossPlanAction(org.id, p, expires || undefined)
+                          }}
+                            className={`text-[10px] px-2 py-1 rounded-lg border transition ${
+                              org.plan === p ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500'
+                            }`}>
+                            {p.charAt(0).toUpperCase() + p.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="text-[10px] text-slate-500">
+                        Quota: {org.quota || 'Unlimited'} wajah · {org.expires_at ? `Exp: ${new Date(org.expires_at).toLocaleDateString('id-ID')}` : 'Active'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Stats */}
             <div className="grid grid-cols-3 gap-3 mb-5">
               <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3 text-center">

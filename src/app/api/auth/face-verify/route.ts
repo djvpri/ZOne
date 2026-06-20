@@ -42,22 +42,46 @@ export async function POST(req: Request) {
       user = await prisma.user.findUnique({ where: { email } })
     }
 
-    // If no user found, find by name (case-insensitive, partial match)
+    // If no user found, find by name (flexible matching)
     if (!user) {
       const allUsers = await prisma.user.findMany()
       const faceName = personName.toLowerCase().trim()
+      const faceParts = faceName.split(/\s+/)
       
-      // Try exact name match first
-      user = allUsers.find(u => u.name.toLowerCase().trim() === faceName)
-      
-      // If no exact match, try partial match (first name)
-      if (!user) {
-        const firstName = faceName.split(' ')[0]
-        user = allUsers.find(u => {
-          const userName = u.name.toLowerCase().trim()
-          return userName.includes(firstName) || firstName.includes(userName.split(' ')[0])
-        })
+      // Score-based matching
+      let bestScore = 0
+      for (const u of allUsers) {
+        const userName = u.name.toLowerCase().trim()
+        const userParts = userName.split(/\s+/)
+        
+        let score = 0
+        
+        // Exact match = 100
+        if (userName === faceName) {
+          score = 100
+        }
+        // Full name contains = 80
+        else if (userName.includes(faceName) || faceName.includes(userName)) {
+          score = 80
+        }
+        // Any part matches = 60 per match
+        else {
+          for (const fp of faceParts) {
+            for (const up of userParts) {
+              if (fp === up) score += 60
+              else if (fp.includes(up) || up.includes(fp)) score += 30
+            }
+          }
+        }
+        
+        if (score > bestScore) {
+          bestScore = score
+          user = u
+        }
       }
+      
+      // Require at least 30% match
+      if (bestScore < 30) user = null
     }
 
     if (!user) {

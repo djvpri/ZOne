@@ -77,6 +77,11 @@ export default function DashboardPage() {
             <a href="/profile" className="text-slate-400 hover:text-blue-400 transition-colors p-2" title="Profil">
               👤
             </a>
+            {user.role === 'ADMIN' && (
+              <a href="/admin" className="text-slate-400 hover:text-amber-400 transition-colors p-2" title="Admin">
+                ⚙️
+              </a>
+            )}
             <button onClick={() => signOut({ callbackUrl: '/login' })}
               className="text-slate-400 hover:text-red-400 transition-colors p-2">
               🚪

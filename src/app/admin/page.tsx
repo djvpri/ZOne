@@ -10,7 +10,7 @@ interface CrossAppUser {
   id: string; name: string; email: string; role: string; faceId: string | null; tenantId?: number; aktif?: boolean; createdAt: string
 }
 
-type Tab = 'zone' | 'zgold' | 'zbengkel' | 'zlaundry' | 'settings'
+type Tab = 'zone' | 'zgold' | 'zbengkel' | 'zlaundry' | 'zface' | 'settings'
 
 export default function AdminPage() {
   const { data: session, status } = useSession()
@@ -204,6 +204,7 @@ export default function AdminPage() {
     { key: 'zgold', label: 'ZGold', icon: '💰' },
     { key: 'zbengkel', label: 'ZBengkel', icon: '🔧' },
     { key: 'zlaundry', label: 'ZLaundry', icon: '🧺' },
+    { key: 'zface', label: 'ZFace', icon: '📷' },
     { key: 'settings', label: 'Settings', icon: '⚙️' },
   ]
 

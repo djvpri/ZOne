@@ -19,6 +19,11 @@ const APPS = {
     url: process.env.ZLAUNDRY_URL || 'https://zlaundry-production.up.railway.app',
     secret: process.env.CROSS_APP_SECRET || 'z-ecosystem-admin-2026',
   },
+  ZFACE: {
+    name: 'ZFace',
+    url: process.env.ZFACE_URL || 'https://zface.zomet.my.id',
+    secret: process.env.CROSS_APP_SECRET || 'z-ecosystem-admin-2026',
+  },
 }
 
 export async function GET(req: NextRequest) {

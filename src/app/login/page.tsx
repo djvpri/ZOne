@@ -83,7 +83,7 @@ export default function LoginPage() {
       setFaceStatus('Memverifikasi wajah...')
       const formData = new FormData()
       formData.append('file', blob, 'face.jpg')
-      formData.append('org_id', '1')  // Default org, bisa dikonfigurasi
+      formData.append('org_id', process.env.NEXT_PUBLIC_ZFACE_ORG_ID || '1')
 
       const zfaceRes = await fetch('https://zface.zomet.my.id/api/auth/face-login', {
         method: 'POST',

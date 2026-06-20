@@ -551,7 +551,7 @@ export default function AdminPage() {
                 <div className="text-[10px] text-slate-400">📷 Wajah</div>
               </div>
               <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3 text-center">
-                <div className="text-xl font-bold text-blue-400">{allUsers.filter(u => u.role?.toLowerCase() === 'admin' || u.role === 'ADMIN' || u.role === 'owner').length}</div>
+                <div className="text-xl font-bold text-blue-400">{allUsers.filter(u => u.role?.toLowerCase() === 'admin' || u.role === 'ADMIN').length}</div>
                 <div className="text-[10px] text-slate-400">Admin</div>
               </div>
             </div>
@@ -584,7 +584,7 @@ export default function AdminPage() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-white text-sm">{user.name}</span>
                           {user.faceId && <span className="text-xs">📷</span>}
-                          {(user.role === 'ADMIN' || user.role === 'owner') && <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded">ADMIN</span>}
+                          {user.role === 'ADMIN' && <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded">ADMIN</span>}
                         </div>
                         <div className="text-xs text-slate-400 truncate mt-0.5">{user.email}</div>
                         <div className="text-[10px] text-slate-500 mt-1">
@@ -616,9 +616,9 @@ export default function AdminPage() {
                             </button>
                           )}
                           {tab === 'zgold' && (
-                            <button onClick={() => handleAction(tab, 'updateRole', user.email, { role: user.role === 'owner' ? 'kasir' : 'owner' })}
+                            <button onClick={() => handleAction(tab, 'updateRole', user.email, { role: user.role === 'owner' || user.role === 'admin' || user.role === 'ADMIN' ? 'kasir' : 'admin' })}
                               className="text-[10px] px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700">
-                              {user.role === 'owner' ? '↓ kasir' : '↑ owner'}
+                              {user.role === 'owner' || user.role === 'admin' || user.role === 'ADMIN' ? '↓ kasir' : '↑ admin'}
                             </button>
                           )}
                           <button onClick={() => {
@@ -729,7 +729,7 @@ export default function AdminPage() {
                 <div className="flex gap-2">
                   {[
                     { key: '', label: 'Default' },
-                    ...(tab === 'zgold' ? [{ key: 'kasir', label: 'Kasir' }, { key: 'owner', label: 'Owner' }] :
+                    ...(tab === 'zgold' ? [{ key: 'kasir', label: 'Kasir' }, { key: 'admin', label: 'Admin' }] :
                       tab === 'zbengkel' ? [{ key: 'KASIR', label: 'Kasir' }, { key: 'ADMIN', label: 'Admin' }, { key: 'MEKANIK', label: 'Mekanik' }] :
                       [{ key: 'KASIR', label: 'Kasir' }, { key: 'ADMIN', label: 'Admin' }]),
                   ].map(r => (

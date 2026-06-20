@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 
 type LoginMode = 'password' | 'face'
@@ -43,22 +44,33 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true); setError('')
     try {
+      // First get CSRF token
+      const csrfRes = await fetch('/api/auth/csrf')
+      const { csrfToken } = await csrfRes.json()
+      
+      // Then login
       const res = await fetch('/api/auth/callback/credentials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
           email: loginEmail,
           password: loginPassword,
+          csrfToken: csrfToken,
           redirect: 'false',
-          csrfToken: (document.querySelector('input[name="csrfToken"]') as HTMLInputElement)?.value || '',
           callbackUrl: '/dashboard',
           json: 'true',
         }),
+        credentials: 'include',
       })
       const data = await res.json()
-      if (data?.url) window.location.href = data.url
-      else if (data?.error) setError('Email atau password salah')
-      else window.location.href = '/dashboard'
+      
+      if (data?.error) {
+        setError('Email atau password salah')
+      } else if (data?.url) {
+        window.location.href = data.url
+      } else {
+        window.location.href = '/dashboard'
+      }
     } catch {
       setError('Gagal login')
     } finally {
@@ -130,7 +142,32 @@ export default function LoginPage() {
         const errData = await verifyRes.json().catch(() => ({}))
         throw new Error(errData.error || 'Verifikasi gagal')
       }
-
+      
+      const verifyData = await verifyRes.json()
+      
+      // Login with the verified user
+      const csrfRes = await fetch('/api/auth/csrf')
+      const { csrfToken } = await csrfRes.json()
+      
+      const loginRes = await fetch('/api/auth/callback/credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          email: verifyData.email,
+          password: `face:${verifyData.personName || verifyData.name}`,
+          csrfToken: csrfToken,
+          redirect: 'false',
+          callbackUrl: '/dashboard',
+          json: 'true',
+        }),
+        credentials: 'include',
+      })
+      const loginData = await loginRes.json()
+      
+      if (loginData?.error) {
+        throw new Error('Login gagal setelah verifikasi')
+      }
+      
       window.location.href = '/dashboard'
     } catch (err: any) {
       setError(err.message || 'Face login gagal')

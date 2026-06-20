@@ -23,6 +23,13 @@ export default function AdminPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [search, setSearch] = useState('')
+  const [showAddUser, setShowAddUser] = useState(false)
+  const [addName, setAddName] = useState('')
+  const [addEmail, setAddEmail] = useState('')
+  const [addPhone, setAddPhone] = useState('')
+  const [addPassword, setAddPassword] = useState('')
+  const [addRole, setAddRole] = useState('USER')
+  const [addLoading, setAddLoading] = useState(false)
 
   const isAdmin = (session?.user as any)?.role === 'ADMIN'
 
@@ -87,6 +94,39 @@ export default function AdminPage() {
       if (res.ok) { setSuccess(`${action} berhasil`); fetchZoneUsers() }
       else { const d = await res.json(); setError(d.error || 'Gagal') }
     } catch { setError('Gagal') }
+  }
+
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setAddLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: addName, email: addEmail, phone: addPhone, password: addPassword }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Gagal daftarkan user')
+
+      // If role is ADMIN, update it after registration
+      if (addRole === 'ADMIN') {
+        await fetch('/api/admin/update-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: addEmail, role: 'ADMIN' }),
+        })
+      }
+
+      setSuccess(`User ${addName} berhasil didaftarkan!`)
+      setShowAddUser(false)
+      setAddName(''); setAddEmail(''); setAddPhone(''); setAddPassword(''); setAddRole('USER')
+      fetchZoneUsers()
+    } catch (err: any) {
+      setError(err.message || 'Gagal daftarkan user')
+    } finally {
+      setAddLoading(false)
+    }
   }
 
   if (status === 'loading' || loading) return (
@@ -183,12 +223,27 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* Search */}
-            <div className="relative mb-5">
-              <input type="text" placeholder="Cari user..." value={search} onChange={e => setSearch(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
-            </div>
+            {/* Search + Add button */}
+            {tab === 'zone' && (
+              <div className="flex gap-2 mb-5">
+                <div className="relative flex-1">
+                  <input type="text" placeholder="Cari user..." value={search} onChange={e => setSearch(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
+                </div>
+                <button onClick={() => setShowAddUser(true)}
+                  className="flex-shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-3 rounded-xl active:scale-95 transition">
+                  + Tambah
+                </button>
+              </div>
+            )}
+            {tab !== 'zone' && (
+              <div className="relative mb-5">
+                <input type="text" placeholder="Cari user..." value={search} onChange={e => setSearch(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
+              </div>
+            )}
 
             {/* User list */}
             {crossLoading ? (
@@ -262,6 +317,57 @@ export default function AdminPage() {
           </>
         )}
       </main>
+
+      {/* Add User Modal */}
+      {showAddUser && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4" onClick={() => setShowAddUser(false)}>
+          <div className="w-full sm:max-w-sm bg-slate-800 border border-slate-700 rounded-t-2xl sm:rounded-2xl p-5 pb-safe" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-white font-bold text-lg">Tambah User</h3>
+              <button onClick={() => setShowAddUser(false)} className="text-slate-400 hover:text-white text-xl">×</button>
+            </div>
+
+            <form onSubmit={handleAddUser} className="space-y-3">
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5">Nama Lengkap *</label>
+                <input type="text" value={addName} required onChange={e => setAddName(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5">Email *</label>
+                <input type="email" value={addEmail} required onChange={e => setAddEmail(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5">No. HP</label>
+                <input type="tel" value={addPhone} onChange={e => setAddPhone(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5">Password *</label>
+                <input type="password" value={addPassword} required minLength={6} onChange={e => setAddPassword(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5">Role</label>
+                <div className="flex gap-2">
+                  {['USER', 'ADMIN'].map(r => (
+                    <button key={r} type="button" onClick={() => setAddRole(r)}
+                      className={`flex-1 py-2.5 text-sm font-medium rounded-lg border transition ${addRole === r ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-900 text-slate-400 border-slate-700'}`}>
+                      {r === 'ADMIN' ? '🔑 ADMIN' : '👤 USER'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button type="submit" disabled={addLoading}
+                className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold rounded-xl py-3.5 mt-2 transition active:scale-[0.98]">
+                {addLoading ? 'Mendaftarkan...' : '✓ Daftarkan User'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

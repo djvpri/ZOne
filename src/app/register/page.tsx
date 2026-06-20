@@ -8,6 +8,7 @@ export default function RegisterPage() {
   const [step, setStep] = useState(1)  // 1: form, 2: face, 3: done
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -38,7 +39,7 @@ export default function RegisterPage() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, phone, password }),
       })
       const data = await res.json()
 
@@ -154,6 +155,12 @@ export default function RegisterPage() {
                 <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="email@example.com" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">No. HP (opsional)</label>
+                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="08123456789" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1.5">Password</label>

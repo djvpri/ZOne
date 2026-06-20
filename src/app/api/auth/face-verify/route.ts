@@ -1,8 +1,32 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
+import bcrypt from 'bcryptjs'
 
 const ZFACE_SECRET = process.env.FACE_LOGIN_SECRET || process.env.NEXTAUTH_SECRET || ''
+const CROSS_APP_SECRET = process.env.CROSS_APP_SECRET || 'z-ecosystem-admin-2026'
+const APPS = {
+  zgold: 'https://zgold-production.up.railway.app',
+  zbengkel: 'https://zbengkel-production.up.railway.app',
+  zlaundry: 'https://zlaundry-production.up.railway.app',
+}
+
+async function findUserInOtherApps(email: string): Promise<{ name: string; source: string } | null> {
+  for (const [key, baseUrl] of Object.entries(APPS)) {
+    try {
+      const res = await fetch(`${baseUrl}/api/admin/cross-app?app=${key}`, {
+        headers: { 'Authorization': `Bearer ${CROSS_APP_SECRET}` },
+        signal: AbortSignal.timeout(5000),
+      })
+      if (!res.ok) continue
+      const data = await res.json()
+      const users = data.users || []
+      const found = users.find((u: any) => u.email?.toLowerCase() === email.toLowerCase())
+      if (found) return { name: found.name, source: key }
+    } catch {}
+  }
+  return null
+}
 
 export async function POST(req: Request) {
   try {
@@ -82,12 +106,34 @@ export async function POST(req: Request) {
     }
 
     if (!user) {
-      return NextResponse.json({
-        error: `Wajah "${personName}" terdeteksi tapi tidak ada user yang cocok di ZOne`,
-        faceId,
-        personName,
-        similarity,
-      }, { status: 404 })
+      // SSO: Check other apps for this user
+      // If email is linked in ZFace, try to find in other apps
+      if (email) {
+        const crossUser = await findUserInOtherApps(email)
+        if (crossUser) {
+          // Auto-create ZOne account
+          const hashedPw = await bcrypt.hash(`face:${crossUser.name}`, 10)
+          user = await prisma.user.create({
+            data: {
+              name: crossUser.name,
+              email: email,
+              password: hashedPw,
+              role: 'USER',
+              faceId: faceId,
+            },
+          })
+          console.log(`[SSO Face] Auto-created ZOne account for ${email} from ${crossUser.source}`)
+        }
+      }
+      
+      if (!user) {
+        return NextResponse.json({
+          error: `Wajah "${personName}" terdeteksi tapi tidak ada user yang cocok di ZOne`,
+          faceId,
+          personName,
+          similarity,
+        }, { status: 404 })
+      }
     }
 
     // 3. If user doesn't have faceId linked yet, link it now

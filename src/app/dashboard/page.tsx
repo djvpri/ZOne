@@ -105,8 +105,7 @@ export default function DashboardPage() {
               <div className="text-xs text-slate-400 truncate">{user.email}</div>
             </div>
             <div className="text-right">
-              <div className="text-xs text-slate-400">Plan</div>
-              <div className="text-sm font-bold text-green-400">{user.plan || 'FREE'}</div>
+              <div className="text-sm font-bold text-green-400"></div>
             </div>
           </div>
         </div>
@@ -162,8 +161,7 @@ export default function DashboardPage() {
             <div className="text-2xl font-bold text-purple-400">{apps.length}</div>
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-            <div className="text-xs text-slate-400 mb-1">Plan</div>
-            <div className="text-2xl font-bold text-green-400">{user.plan || 'FREE'}</div>
+            <div className="text-2xl font-bold text-green-400"></div>
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
             <div className="text-xs text-slate-400 mb-1">Role</div>

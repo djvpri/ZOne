@@ -199,8 +199,7 @@ export default function ProfilePage() {
               <div className="font-medium text-white">{user.role}</div>
             </div>
             <div className="bg-slate-800/50 rounded-xl p-3">
-              <div className="text-slate-400 text-xs mb-1">Plan</div>
-              <div className="font-medium text-white">{user.plan || 'FREE'}</div>
+              <div className="font-medium text-white"></div>
             </div>
             <div className="bg-slate-800/50 rounded-xl p-3">
               <div className="text-slate-400 text-xs mb-1">Wajah</div>

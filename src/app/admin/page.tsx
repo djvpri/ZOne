@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 
 interface ZOneUser {
-  id: string; name: string; email: string; role: string; plan: string; faceId: string | null; phone: string | null; createdAt: string
+  id: string; name: string; email: string; role: string; faceId: string | null; phone: string | null; createdAt: string
 }
 interface CrossAppUser {
   id: string; name: string; email: string; role: string; faceId: string | null; tenantId?: number; aktif?: boolean; createdAt: string
@@ -209,9 +209,7 @@ export default function AdminPage() {
                         </div>
                         <div className="text-xs text-slate-400 truncate mt-0.5">{user.email}</div>
                         <div className="text-[10px] text-slate-500 mt-1">
-                          {tab === 'zone' ? (user as ZOneUser).plan : (user as CrossAppUser).tenantId ? `Tenant #${(user as CrossAppUser).tenantId}` : '—'}
-                          {' · '}
-                          {user.createdAt ? new Date(user.createdAt).toLocaleDateString('id-ID') : '—'}
+                          {new Date(user.createdAt).toLocaleDateString('id-ID')}
                         </div>
                       </div>
                     </div>
@@ -223,13 +221,6 @@ export default function AdminPage() {
                             className="text-[10px] px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700">
                             {user.role === 'ADMIN' ? '↓ USER' : '↑ ADMIN'}
                           </button>
-                          {['FREE', 'PRO', 'BUSINESS', 'ENTERPRISE'].map(p => (
-                            <button key={p} onClick={() => handleZoneAction('update-user', user.email, { plan: p })}
-                              disabled={(user as ZOneUser).plan === p}
-                              className={`text-[10px] px-2 py-1.5 rounded-lg border ${(user as ZOneUser).plan === p ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}>
-                              {p}
-                            </button>
-                          ))}
                           {user.faceId && (
                             <button onClick={() => handleZoneAction('unlink-face', user.email)}
                               className="text-[10px] px-2.5 py-1.5 rounded-lg bg-orange-500/10 text-orange-400 border border-orange-500/20">

@@ -24,29 +24,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           
           // Face login: password format is "face:PersonName"
           if (password.startsWith('face:')) {
-            const faceName = password.slice(5) // Remove "face:" prefix
+            const faceName = password.slice(5)
             
-            // Find user by email
             const user = await prisma.user.findUnique({ where: { email } })
             if (!user) return null
             
-            // Check if user name matches face name (case-insensitive)
             const userName = user.name.toLowerCase().trim()
             const faceNameLower = faceName.toLowerCase().trim()
             
-            // Allow partial match (first name or full name)
             if (userName.includes(faceNameLower) || faceNameLower.includes(userName.split(' ')[0])) {
               return {
                 id: user.id,
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                plan: user.plan,
                 faceId: user.faceId,
               } as any
             }
-            
-            // Name doesn't match
             return null
           }
           
@@ -62,7 +56,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             name: user.name,
             email: user.email,
             role: user.role,
-            plan: user.plan,
             faceId: user.faceId,
           } as any
         } catch (e) {
@@ -77,7 +70,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id
         token.role = user.role
-        token.plan = user.plan
         token.faceId = (user as any).faceId || null
       }
       // Refresh role + faceId from DB on each token refresh
@@ -86,11 +78,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const { prisma } = require('@/lib/prisma')
           const dbUser = await prisma.user.findUnique({
             where: { id: token.id as string },
-            select: { role: true, plan: true, faceId: true },
+            select: { role: true, faceId: true },
           })
           if (dbUser) {
             token.role = dbUser.role
-            token.plan = dbUser.plan
             if (dbUser.faceId) token.faceId = dbUser.faceId
           }
         } catch {}
@@ -101,7 +92,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.id = token.id as string
         session.user.role = token.role as string
-        session.user.plan = token.plan as string
         ;(session.user as any).faceId = token.faceId || null
       }
       return session

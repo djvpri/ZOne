@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs'
 
 export async function POST(req: Request) {
   try {
-    const { email, role, plan, password } = await req.json()
+    const { email, role, password } = await req.json()
 
     if (!email) {
       return NextResponse.json({ error: 'Email required' }, { status: 400 })
@@ -18,7 +18,6 @@ export async function POST(req: Request) {
     const updateData: any = {}
 
     if (role) updateData.role = role
-    if (plan) updateData.plan = plan
     if (password) {
       if (password.length < 6) {
         return NextResponse.json({ error: 'Password min 6 karakter' }, { status: 400 })

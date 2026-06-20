@@ -16,7 +16,6 @@ model User {
   avatar        String?
   faceId        String?   @unique  // Link ke ZFace face_id
   role          Role      @default(USER)
-  plan          Plan      @default(FREE)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
@@ -73,11 +72,4 @@ model Activity {
 enum Role {
   USER
   ADMIN
-}
-
-enum Plan {
-  FREE
-  PRO
-  BUSINESS
-  ENTERPRISE
 }

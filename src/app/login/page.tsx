@@ -88,9 +88,9 @@ export default function LoginPage() {
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
           const controller = new AbortController()
-          const timeout = setTimeout(() => controller.abort(), 10000)
+          const timeout = setTimeout(() => controller.abort(), 30000)
           
-          const zfaceRes = await fetch('https://zface.zomet.my.id/api/auth/face-login', {
+          const zfaceRes = await fetch('/api/auth/face-login', {
             method: 'POST',
             body: formData,
             signal: controller.signal,
@@ -99,7 +99,7 @@ export default function LoginPage() {
 
           if (!zfaceRes.ok) {
             const errData = await zfaceRes.json().catch(() => ({}))
-            throw new Error(errData.detail || 'Wajah tidak terdaftar')
+            throw new Error(errData.detail || errData.error || 'Wajah tidak terdaftar')
           }
 
           zfaceData = await zfaceRes.json()

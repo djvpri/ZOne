@@ -9,7 +9,6 @@ export async function GET() {
         name: true,
         email: true,
         role: true,
-        plan: true,
         faceId: true,
         createdAt: true,
       },

@@ -284,12 +284,10 @@ export default function AdminPage() {
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
               </div>
-              {tab !== 'settings' && (
-                <button onClick={() => tab === 'zone' ? setShowAddUser(true) : setShowCrossAdd(true)}
-                  className="flex-shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-3 rounded-xl active:scale-95 transition">
-                  + Tambah
-                </button>
-              )}
+              <button onClick={() => tab === 'zone' ? setShowAddUser(true) : setShowCrossAdd(true)}
+                className="flex-shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-3 rounded-xl active:scale-95 transition">
+                + Tambah
+              </button>
             </div>
 
             {/* User list */}

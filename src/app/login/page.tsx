@@ -19,7 +19,6 @@ export default function LoginPage() {
   const streamRef = useRef<MediaStream | null>(null)
   const router = useRouter()
 
-  // Stop camera
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop())
@@ -28,7 +27,6 @@ export default function LoginPage() {
     setCameraActive(false)
   }, [])
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => stopCamera()
   }, [stopCamera])
@@ -38,23 +36,13 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    
-    const res = await signIn('credentials', {
-      email,
-      password,
-      redirect: false,
-    })
-    
+    const res = await signIn('credentials', { email, password, redirect: false })
     setLoading(false)
-    
-    if (res?.error) {
-      setError('Email atau password salah')
-    } else {
-      router.push('/dashboard')
-    }
+    if (res?.error) setError('Email atau password salah')
+    else router.push('/dashboard')
   }
 
-  // Face login
+  // Face login — proper flow
   const handleFaceLogin = async () => {
     if (!email) {
       setError('Masukkan email terlebih dahulu')
@@ -66,89 +54,86 @@ export default function LoginPage() {
     setFaceStatus('Mengaktifkan kamera...')
 
     try {
-      // Start camera
+      // 1. Start camera
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 640, height: 480, facingMode: 'user' }
       })
-
       if (videoRef.current) {
         videoRef.current.srcObject = stream
         streamRef.current = stream
         setCameraActive(true)
       }
 
-      // Wait for camera to be ready
+      // 2. Wait for camera ready
       await new Promise(resolve => setTimeout(resolve, 1500))
-
       setFaceStatus('Mendeteksi wajah...')
 
-      // Capture frame
+      // 3. Capture frame
       const video = videoRef.current!
       const canvas = canvasRef.current!
       canvas.width = video.videoWidth
       canvas.height = video.videoHeight
-      const ctx = canvas.getContext('2d')!
-      ctx.drawImage(video, 0, 0)
+      canvas.getContext('2d')!.drawImage(video, 0, 0)
 
-      // Convert to blob
       const blob = await new Promise<Blob>((resolve) => {
         canvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.8)
       })
 
+      // 4. Send to ZFace /api/auth/face-login
       setFaceStatus('Memverifikasi wajah...')
-
-      // Send to ZFace API
       const formData = new FormData()
       formData.append('file', blob, 'face.jpg')
+      formData.append('org_id', '1')  // Default org, bisa dikonfigurasi
 
-      const zfaceRes = await fetch('https://zface.zomet.my.id/api/identify', {
+      const zfaceRes = await fetch('https://zface.zomet.my.id/api/auth/face-login', {
         method: 'POST',
         body: formData,
       })
 
       if (!zfaceRes.ok) {
-        throw new Error('Gagal menghubungi ZFace')
+        const errData = await zfaceRes.json().catch(() => ({}))
+        throw new Error(errData.detail || 'Wajah tidak terdaftar')
       }
 
       const zfaceData = await zfaceRes.json()
-      console.log('ZFace response:', zfaceData)
+      const personName = zfaceData.person.name
+      const similarity = zfaceData.person.similarity
+      const faceToken = zfaceData.access_token
 
-      // Check if any face was detected and matched
-      const faces = zfaceData.faces || []
-      const matchedFace = faces.find((f: any) => f.best && f.best.similarity > 0.4)
+      setFaceStatus(`✓ ${personName} (${(similarity * 100).toFixed(0)}%) — Login...`)
 
-      if (!matchedFace) {
-        setError('Wajah tidak terdeteksi atau tidak terdaftar di ZFace')
-        setFaceStatus('')
-        stopCamera()
-        setLoading(false)
-        return
+      // 5. Send face token to ZOne /api/auth/face-verify
+      const verifyRes = await fetch('/api/auth/face-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ faceToken, email }),
+      })
+
+      if (!verifyRes.ok) {
+        const errData = await verifyRes.json().catch(() => ({}))
+        throw new Error(errData.error || 'Verifikasi gagal')
       }
 
-      const personName = matchedFace.best.name
-      const similarity = matchedFace.best.similarity
+      const verifyData = await verifyRes.json()
 
-      setFaceStatus(`Wajah terverifikasi: ${personName} (${(similarity * 100).toFixed(1)}%)`)
-
-      // Try to sign in with the matched name
-      // We'll use the email provided and try to find a matching user
-      const res = await signIn('credentials', {
-        email: email,
-        password: `face:${personName}`,  // Special password format for face login
+      // 6. Sign in with the verified credentials
+      const signInRes = await signIn('credentials', {
+        email: verifyData.email,
+        password: `face:${verifyData.name}`,
         redirect: false,
       })
 
       stopCamera()
 
-      if (res?.error) {
-        setError(`Wajah cocok dengan "${personName}" tapi login gagal. Pastikan email benar.`)
+      if (signInRes?.error) {
+        setError('Login gagal setelah verifikasi wajah')
         setFaceStatus('')
       } else {
         router.push('/dashboard')
       }
     } catch (err) {
       console.error('Face login error:', err)
-      setError('Gagal melakukan face login: ' + (err as Error).message)
+      setError((err as Error).message || 'Face login gagal')
       setFaceStatus('')
       stopCamera()
     } finally {
@@ -159,7 +144,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 mb-4 shadow-lg shadow-blue-500/25">
             <span className="text-3xl font-bold text-white">Z</span>
@@ -173,9 +157,7 @@ export default function LoginPage() {
           <button
             onClick={() => { setMode('password'); stopCamera(); setFaceStatus(''); setError('') }}
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
-              mode === 'password'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+              mode === 'password' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
             }`}
           >
             🔑 Password
@@ -183,16 +165,13 @@ export default function LoginPage() {
           <button
             onClick={() => { setMode('face'); setError(''); setFaceStatus('') }}
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
-              mode === 'face'
-                ? 'bg-purple-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+              mode === 'face' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
             }`}
           >
             📷 Wajah
           </button>
         </div>
 
-        {/* Login Form */}
         <div className="bg-slate-900/80 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-sm">
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-lg px-4 py-2 mb-4">
@@ -204,31 +183,18 @@ export default function LoginPage() {
             <form onSubmit={handlePasswordLogin} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1.5">Email</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
+                <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="admin@zone.id"
-                />
+                  placeholder="admin@zone.id" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1.5">Password</label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
+                <input type="password" required value={password} onChange={e => setPassword(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="••••••••"
-                />
+                  placeholder="••••••••" />
               </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-lg px-4 py-2.5 transition-colors"
-              >
+              <button type="submit" disabled={loading}
+                className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-lg px-4 py-2.5 transition-colors">
                 {loading ? 'Masuk...' : 'Masuk'}
               </button>
             </form>
@@ -236,27 +202,15 @@ export default function LoginPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1.5">Email</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
+                <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="admin@zone.id"
-                />
+                  placeholder="admin@zone.id" />
               </div>
 
-              {/* Camera Preview */}
               <div className="relative aspect-video bg-slate-800 rounded-lg overflow-hidden">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className={`w-full h-full object-cover ${cameraActive ? '' : 'hidden'}`}
-                />
+                <video ref={videoRef} autoPlay playsInline muted
+                  className={`w-full h-full object-cover ${cameraActive ? '' : 'hidden'}`} />
                 <canvas ref={canvasRef} className="hidden" />
-                
                 {!cameraActive && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
@@ -265,7 +219,6 @@ export default function LoginPage() {
                     </div>
                   </div>
                 )}
-                
                 {faceStatus && (
                   <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-sm p-2 text-center">
                     {faceStatus}
@@ -273,19 +226,14 @@ export default function LoginPage() {
                 )}
               </div>
 
-              <button
-                onClick={handleFaceLogin}
-                disabled={loading}
-                className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-medium rounded-lg px-4 py-2.5 transition-colors"
-              >
+              <button onClick={handleFaceLogin} disabled={loading}
+                className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-medium rounded-lg px-4 py-2.5 transition-colors">
                 {loading ? 'Memproses...' : '📷 Login dengan Wajah'}
               </button>
             </div>
           )}
 
-          <p className="text-center text-xs text-slate-500 mt-4">
-            Demo: admin@zone.id / admin123
-          </p>
+          <p className="text-center text-xs text-slate-500 mt-4">Demo: admin@zone.id / admin123</p>
         </div>
       </div>
     </div>

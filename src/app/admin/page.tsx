@@ -407,7 +407,7 @@ export default function AdminPage() {
               <div className="mb-5">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-xs font-bold text-slate-400 uppercase">Tenant Plans</h4>
-                  {tab === 'zgold' || tab === 'zbengkel' ? (
+                  {tab === 'zgold' || tab === 'zbengkel' || tab === 'zlaundry' ? (
                     <button onClick={handleCreateTenant} className="text-[10px] px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg">+ Tambah Tenant</button>
                   ) : null}
                 </div>

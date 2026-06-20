@@ -53,11 +53,12 @@ export async function POST(req: NextRequest) {
   try {
     const { app: appKey, action, email, data } = await req.json()
 
-    if (!appKey || !APPS[appKey.toUpperCase()]) {
+    const upperKey = String(appKey || '').toUpperCase() as keyof typeof APPS
+    if (!appKey || !APPS[upperKey]) {
       return NextResponse.json({ error: 'Invalid app' }, { status: 400 })
     }
 
-    const app = APPS[appKey.toUpperCase() as keyof typeof APPS]
+    const app = APPS[upperKey]
 
     const response = await fetch(`${app.url}/api/admin/cross-app`, {
       method: 'POST',

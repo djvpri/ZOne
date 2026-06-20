@@ -1,27 +1,35 @@
 'use client'
-
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 type LoginMode = 'password' | 'face'
 
 export default function LoginPage() {
-  const [mode, setMode] = useState<LoginMode>('password')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const router = useRouter()
+  const [isLogin, setIsLogin] = useState(true)
+  const [loginMode, setLoginMode] = useState<LoginMode>('password')
   const [loading, setLoading] = useState(false)
-  const [cameraActive, setCameraActive] = useState(false)
+  const [error, setError] = useState('')
   const [faceStatus, setFaceStatus] = useState('')
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
-  const router = useRouter()
+  const [cameraActive, setCameraActive] = useState(false)
+
+  // Login
+  const [loginEmail, setLoginEmail] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+
+  // Register
+  const [regName, setRegName] = useState('')
+  const [regEmail, setRegEmail] = useState('')
+  const [regPhone, setRegPhone] = useState('')
+  const [regPassword, setRegPassword] = useState('')
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop())
+      streamRef.current.getTracks().forEach(t => t.stop())
       streamRef.current = null
     }
     setCameraActive(false)
@@ -31,25 +39,37 @@ export default function LoginPage() {
     return () => stopCamera()
   }, [stopCamera])
 
-  // Password login
-  const handlePasswordLogin = async (e: React.FormEvent) => {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true)
-    setError('')
-    const res = await signIn('credentials', { email, password, redirect: false })
-    setLoading(false)
-    if (res?.error) setError('Email atau password salah')
-    else router.push('/dashboard')
+    setLoading(true); setError('')
+    try {
+      const res = await fetch('/api/auth/callback/credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          email: loginEmail,
+          password: loginPassword,
+          redirect: 'false',
+          csrfToken: (document.querySelector('input[name="csrfToken"]') as HTMLInputElement)?.value || '',
+          callbackUrl: '/dashboard',
+          json: 'true',
+        }),
+      })
+      const data = await res.json()
+      if (data?.url) window.location.href = data.url
+      else if (data?.error) setError('Email atau password salah')
+      else window.location.href = '/dashboard'
+    } catch {
+      setError('Gagal login')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  // Face login — no email needed!
-  const handleFaceLogin = async () => {
-    setLoading(true)
-    setError('')
-    setFaceStatus('Mengaktifkan kamera...')
+  async function handleFaceLogin() {
+    setLoading(true); setError(''); setFaceStatus('Mengaktifkan kamera...')
 
     try {
-      // 1. Start camera
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 640, height: 480, facingMode: 'user' }
       })
@@ -59,23 +79,23 @@ export default function LoginPage() {
         setCameraActive(true)
       }
 
-      // 2. Wait for camera ready
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      await new Promise(r => setTimeout(r, 1500))
       setFaceStatus('Mendeteksi wajah...')
+      await new Promise(r => setTimeout(r, 1500))
 
-      // 3. Capture frame
       const video = videoRef.current!
       const canvas = canvasRef.current!
       canvas.width = video.videoWidth
       canvas.height = video.videoHeight
       canvas.getContext('2d')!.drawImage(video, 0, 0)
 
-      const blob = await new Promise<Blob>((resolve) => {
-        canvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.8)
+      const blob = await new Promise<Blob>(r => {
+        canvas.toBlob(b => r(b!), 'image/jpeg', 0.8)
       })
 
-      // 4. Send to ZFace via proxy (same-origin)
+      stopCamera()
       setFaceStatus('Memverifikasi wajah...')
+
       const formData = new FormData()
       formData.append('file', blob, 'face.jpg')
 
@@ -84,73 +104,36 @@ export default function LoginPage() {
         try {
           const controller = new AbortController()
           const timeout = setTimeout(() => controller.abort(), 30000)
-          
-          const zfaceRes = await fetch('/api/auth/face-login', {
-            method: 'POST',
-            body: formData,
-            signal: controller.signal,
-          })
+          const res = await fetch('/api/auth/face-login', { method: 'POST', body: formData, signal: controller.signal })
           clearTimeout(timeout)
-
-          if (!zfaceRes.ok) {
-            const errData = await zfaceRes.json().catch(() => ({}))
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}))
             throw new Error(errData.detail || errData.error || 'Wajah tidak terdaftar')
           }
-
-          zfaceData = await zfaceRes.json()
+          zfaceData = await res.json()
           break
-        } catch (fetchErr: any) {
-          if (fetchErr.name === 'AbortError' || fetchErr.message?.includes('fetch')) {
-            if (attempt < 3) {
-              setFaceStatus(`Mencoba ulang... (${attempt}/3)`)
-              await new Promise(r => setTimeout(r, 1000))
-              continue
-            }
-          }
-          throw fetchErr
+        } catch (err: any) {
+          if (attempt < 3) { setFaceStatus(`Mencoba ulang... (${attempt}/3)`); await new Promise(r => setTimeout(r, 1000)); continue }
+          throw err
         }
       }
 
       if (!zfaceData) throw new Error('Gagal menghubungi ZFace')
+      setFaceStatus(`✓ ${zfaceData.person.name} — Login...`)
 
-      const personName = zfaceData.person.name
-      const similarity = zfaceData.person.similarity
-      const faceToken = zfaceData.access_token
-
-      setFaceStatus(`✓ ${personName} (${(similarity * 100).toFixed(0)}%) — Login...`)
-
-      // 5. Send face token to ZOne (auto-find user by name, no email needed)
       const verifyRes = await fetch('/api/auth/face-verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ faceToken }),  // No email!
+        body: JSON.stringify({ faceToken: zfaceData.access_token }),
       })
-
       if (!verifyRes.ok) {
         const errData = await verifyRes.json().catch(() => ({}))
         throw new Error(errData.error || 'Verifikasi gagal')
       }
 
-      const verifyData = await verifyRes.json()
-
-      // 6. Sign in with the verified credentials
-      const signInRes = await signIn('credentials', {
-        email: verifyData.email,
-        password: `face:${verifyData.name}`,
-        redirect: false,
-      })
-
-      stopCamera()
-
-      if (signInRes?.error) {
-        setError('Login gagal setelah verifikasi wajah')
-        setFaceStatus('')
-      } else {
-        router.push('/dashboard')
-      }
-    } catch (err) {
-      console.error('Face login error:', err)
-      setError((err as Error).message || 'Face login gagal')
+      window.location.href = '/dashboard'
+    } catch (err: any) {
+      setError(err.message || 'Face login gagal')
       setFaceStatus('')
       stopCamera()
     } finally {
@@ -158,96 +141,152 @@ export default function LoginPage() {
     }
   }
 
+  async function handleRegister(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true); setError('')
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: regName, email: regEmail, phone: regPhone, password: regPassword }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      window.location.href = '/dashboard'
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <div className="w-full max-w-md">
+    <div className="min-h-[100dvh] flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 pt-safe pb-safe">
+      <div className="w-full max-w-sm">
+        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 mb-4 shadow-lg shadow-blue-500/25">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 mb-4">
             <span className="text-3xl font-bold text-white">Z</span>
           </div>
-          <h1 className="text-2xl font-bold text-white">Z One</h1>
-          <p className="text-slate-400 mt-1">Satu platform, semua aplikasi</p>
+          <h1 className="text-xl font-bold">Z One</h1>
+          <p className="text-sm text-slate-400 mt-1">Ekosistem Digital</p>
         </div>
 
-        {/* Mode Toggle */}
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => { setMode('password'); stopCamera(); setFaceStatus(''); setError('') }}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
-              mode === 'password' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-            }`}
-          >
-            🔑 Password
+        {/* Tabs */}
+        <div className="flex gap-1 mb-5 bg-slate-800/50 p-1 rounded-xl">
+          <button onClick={() => { setIsLogin(true); setError(''); stopCamera(); setFaceStatus('') }}
+            className={`flex-1 py-3 text-sm font-medium rounded-lg transition-all ${isLogin ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
+            Masuk
           </button>
-          <button
-            onClick={() => { setMode('face'); setError(''); setFaceStatus('') }}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
-              mode === 'face' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-            }`}
-          >
-            📷 Wajah
+          <button onClick={() => { setIsLogin(false); setError(''); stopCamera(); setFaceStatus('') }}
+            className={`flex-1 py-3 text-sm font-medium rounded-lg transition-all ${!isLogin ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
+            Daftar
           </button>
         </div>
 
-        <div className="bg-slate-900/80 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-sm">
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-lg px-4 py-2 mb-4">
-              {error}
-            </div>
-          )}
+        {error && (
+          <div className="mb-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl px-4 py-3">{error}</div>
+        )}
 
-          {mode === 'password' ? (
-            <form onSubmit={handlePasswordLogin} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Email</label>
-                <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="admin@zone.id" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Password</label>
-                <input type="password" required value={password} onChange={e => setPassword(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="••••••••" />
-              </div>
-              <button type="submit" disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-lg px-4 py-2.5 transition-colors">
-                {loading ? 'Masuk...' : 'Masuk'}
+        {isLogin ? (
+          <>
+            {/* Login mode */}
+            <div className="flex gap-1 mb-4 bg-slate-800/30 p-1 rounded-lg">
+              <button onClick={() => { setLoginMode('password'); setError(''); stopCamera(); setFaceStatus('') }}
+                className={`flex-1 py-2.5 text-xs font-medium rounded-md transition ${loginMode === 'password' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
+                🔑 Password
               </button>
-            </form>
-          ) : (
-            <div className="space-y-4">
-              <div className="relative aspect-video bg-slate-800 rounded-lg overflow-hidden">
-                <video ref={videoRef} autoPlay playsInline muted
-                  className={`w-full h-full object-cover ${cameraActive ? '' : 'hidden'}`} />
-                <canvas ref={canvasRef} className="hidden" />
-                {!cameraActive && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <span className="text-4xl mb-2 block">📷</span>
-                      <p className="text-slate-400 text-sm">Klik tombol di bawah untuk mulai</p>
+              <button onClick={() => { setLoginMode('face'); setError(''); setFaceStatus('') }}
+                className={`flex-1 py-2.5 text-xs font-medium rounded-md transition ${loginMode === 'face' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
+                📷 Wajah
+              </button>
+            </div>
+
+            {loginMode === 'password' ? (
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <label className="block text-xs text-slate-400 mb-2">Email</label>
+                  <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    autoComplete="email" inputMode="email" required />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-2">Password</label>
+                  <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    autoComplete="current-password" required />
+                </div>
+                <button type="submit" disabled={loading}
+                  className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold rounded-xl py-3.5 transition-all active:scale-[0.98]">
+                  {loading ? 'Masuk...' : 'Masuk'}
+                </button>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                <div className="relative aspect-video bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
+                  <video ref={videoRef} autoPlay playsInline muted
+                    className={`w-full h-full object-cover ${cameraActive ? '' : 'hidden'}`} />
+                  <canvas ref={canvasRef} className="hidden" />
+                  {!cameraActive && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center">
+                        <span className="text-4xl mb-3 block">📷</span>
+                        <p className="text-sm text-slate-400">Klik tombol di bawah</p>
+                      </div>
                     </div>
-                  </div>
-                )}
-                {faceStatus && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-sm p-2 text-center">
-                    {faceStatus}
-                  </div>
-                )}
+                  )}
+                  {faceStatus && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-sm p-3 text-center">
+                      {faceStatus}
+                    </div>
+                  )}
+                </div>
+                <button onClick={handleFaceLogin} disabled={loading}
+                  className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold rounded-xl py-3.5 transition-all active:scale-[0.98]">
+                  {loading ? 'Memproses...' : '📷 Login dengan Wajah'}
+                </button>
               </div>
-
-              <button onClick={handleFaceLogin} disabled={loading}
-                className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-medium rounded-lg px-4 py-2.5 transition-colors">
-                {loading ? 'Memproses...' : '📷 Login dengan Wajah'}
-              </button>
+            )}
+          </>
+        ) : (
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div>
+              <label className="block text-xs text-slate-400 mb-2">Nama Lengkap</label>
+              <input type="text" value={regName} required
+                onChange={e => setRegName(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
             </div>
-          )}
+            <div>
+              <label className="block text-xs text-slate-400 mb-2">Email</label>
+              <input type="email" value={regEmail} required
+                onChange={e => setRegEmail(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                autoComplete="email" inputMode="email" />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-2">No. HP</label>
+              <input type="tel" value={regPhone}
+                onChange={e => setRegPhone(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                inputMode="tel" />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-2">Password</label>
+              <input type="password" value={regPassword} required minLength={6}
+                onChange={e => setRegPassword(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                autoComplete="new-password" />
+            </div>
+            <button type="submit" disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold rounded-xl py-3.5 transition-all active:scale-[0.98]">
+              {loading ? 'Mendaftar...' : 'Daftar'}
+            </button>
+          </form>
+        )}
 
-          <p className="text-center text-sm text-slate-400 mt-4">
-            Belum punya akun?{' '}
-            <a href="/register" className="text-blue-400 hover:underline font-medium">Daftar</a>
-          </p>
-        </div>
+        <p className="mt-6 text-center text-xs text-slate-600">
+          v1.0 · Z One Platform
+        </p>
       </div>
     </div>
   )

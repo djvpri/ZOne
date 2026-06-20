@@ -34,7 +34,7 @@ export default function ProfilePage() {
   }, [status, router, stopCamera])
 
   if (status === 'loading' || !session) return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-[100dvh] flex items-center justify-center">
       <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
     </div>
   )
@@ -74,7 +74,6 @@ export default function ProfilePage() {
       stopCamera()
       setFaceStatus('Mendaftarkan wajah...')
 
-      // Register face to ZFace
       const formData = new FormData()
       formData.append('name', user.name)
       formData.append('file', blob, 'face.jpg')
@@ -89,7 +88,6 @@ export default function ProfilePage() {
 
       const faceId = zfaceData.face_id || zfaceData.id
 
-      // Link faceId to user
       const linkRes = await fetch('/api/auth/link-face', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -101,7 +99,7 @@ export default function ProfilePage() {
 
       setSuccess('✓ Wajah berhasil didaftarkan!')
       setFaceStatus('')
-      await update() // Refresh session
+      await update()
     } catch (err) {
       setError((err as Error).message)
       setFaceStatus('')
@@ -111,7 +109,7 @@ export default function ProfilePage() {
   }
 
   const handleUnlinkFace = async () => {
-    if (!confirm('Yakin ingin menghapus wajah? Login wajah tidak akan bisa dipakai.')) return
+    if (!confirm('Yakin ingin menghapus wajah?')) return
 
     setFaceLoading(true)
     setError('')
@@ -163,68 +161,68 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-[100dvh] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
-      <header className="border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <button onClick={() => router.push('/dashboard')} className="text-slate-400 hover:text-white">
-            ← Kembali
+      <header className="border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-md sticky top-0 z-20 pt-safe">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+          <button onClick={() => router.push('/dashboard')} className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-white">
+            ←
           </button>
           <h1 className="font-bold">Profil</h1>
-          <div className="w-12" />
+          <div className="w-10" />
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-2xl mx-auto px-4 py-6 space-y-5 pb-24">
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-lg px-4 py-2">{error}</div>
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl px-4 py-3">{error}</div>
         )}
         {success && (
-          <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-sm rounded-lg px-4 py-2">{success}</div>
+          <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-sm rounded-xl px-4 py-3">{success}</div>
         )}
 
         {/* Profile Info */}
-        <div className="bg-slate-900/80 border border-slate-700/50 rounded-2xl p-6">
-          <div className="flex items-center gap-4 mb-6">
+        <div className="bg-slate-900/80 border border-slate-700/50 rounded-2xl p-5">
+          <div className="flex items-center gap-4 mb-5">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold text-white">
               {user.name?.charAt(0)?.toUpperCase() || '?'}
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-white">{user.name}</h2>
-              <p className="text-slate-400 text-sm">{user.email}</p>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg font-bold text-white truncate">{user.name}</h2>
+              <p className="text-slate-400 text-sm truncate">{user.email}</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="bg-slate-800/50 rounded-lg p-3">
-              <div className="text-slate-400 mb-1">Role</div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-slate-800/50 rounded-xl p-3">
+              <div className="text-slate-400 text-xs mb-1">Role</div>
               <div className="font-medium text-white">{user.role}</div>
             </div>
-            <div className="bg-slate-800/50 rounded-lg p-3">
-              <div className="text-slate-400 mb-1">Plan</div>
+            <div className="bg-slate-800/50 rounded-xl p-3">
+              <div className="text-slate-400 text-xs mb-1">Plan</div>
               <div className="font-medium text-white">{user.plan || 'FREE'}</div>
             </div>
-            <div className="bg-slate-800/50 rounded-lg p-3">
-              <div className="text-slate-400 mb-1">Wajah</div>
-              <div className="font-medium text-white">{user.faceId ? '✅ Terdaftar' : '❌ Belum'}</div>
+            <div className="bg-slate-800/50 rounded-xl p-3">
+              <div className="text-slate-400 text-xs mb-1">Wajah</div>
+              <div className="font-medium">{user.faceId ? '✅ Terdaftar' : '❌ Belum'}</div>
             </div>
-            <div className="bg-slate-800/50 rounded-lg p-3">
-              <div className="text-slate-400 mb-1">Status</div>
+            <div className="bg-slate-800/50 rounded-xl p-3">
+              <div className="text-slate-400 text-xs mb-1">Status</div>
               <div className="font-medium text-green-400">Aktif</div>
             </div>
           </div>
         </div>
 
         {/* Face Management */}
-        <div className="bg-slate-900/80 border border-slate-700/50 rounded-2xl p-6">
+        <div className="bg-slate-900/80 border border-slate-700/50 rounded-2xl p-5">
           <h3 className="text-white font-bold mb-4">📷 Pengaturan Wajah</h3>
 
           {faceStatus && (
-            <div className="relative aspect-video bg-slate-800 rounded-lg overflow-hidden mb-4">
+            <div className="relative aspect-video bg-slate-800 rounded-xl overflow-hidden mb-4">
               <video ref={videoRef} autoPlay playsInline muted
                 className={`w-full h-full object-cover ${cameraActive ? '' : 'hidden'}`} />
               <canvas ref={canvasRef} className="hidden" />
-              <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-sm p-2 text-center">
+              <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-sm p-3 text-center">
                 {faceStatus}
               </div>
             </div>
@@ -233,22 +231,22 @@ export default function ProfilePage() {
           {user.faceId ? (
             <div className="space-y-3">
               <p className="text-sm text-slate-400">Wajah sudah terdaftar. Kamu bisa login dengan wajah.</p>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button onClick={handleCaptureFace} disabled={faceLoading}
-                  className="flex-1 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-medium rounded-lg px-4 py-2.5 transition-colors text-sm">
-                  {faceLoading ? 'Memproses...' : '🔄 Update Wajah'}
+                  className="flex-1 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-medium rounded-xl px-4 py-3 transition-colors text-sm active:scale-[0.98]">
+                  {faceLoading ? 'Memproses...' : '🔄 Update'}
                 </button>
                 <button onClick={handleUnlinkFace} disabled={faceLoading}
-                  className="flex-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 font-medium rounded-lg px-4 py-2.5 transition-colors text-sm border border-red-500/20">
-                  🗑️ Hapus Wajah
+                  className="flex-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 font-medium rounded-xl px-4 py-3 transition-colors text-sm border border-red-500/20 active:scale-[0.98]">
+                  🗑️ Hapus
                 </button>
               </div>
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm text-slate-400">Belum ada wajah terdaftar. Daftarkan sekarang untuk login cepat.</p>
+              <p className="text-sm text-slate-400">Daftarkan wajah untuk login cepat.</p>
               <button onClick={handleCaptureFace} disabled={faceLoading}
-                className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-medium rounded-lg px-4 py-2.5 transition-colors">
+                className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-medium rounded-xl px-4 py-3 transition-colors active:scale-[0.98]">
                 {faceLoading ? faceStatus || 'Memproses...' : '📷 Daftarkan Wajah'}
               </button>
             </div>
@@ -256,15 +254,15 @@ export default function ProfilePage() {
         </div>
 
         {/* Change Password */}
-        <div className="bg-slate-900/80 border border-slate-700/50 rounded-2xl p-6">
+        <div className="bg-slate-900/80 border border-slate-700/50 rounded-2xl p-5">
           <h3 className="text-white font-bold mb-4">🔒 Ganti Password</h3>
           <form onSubmit={handleChangePassword} className="space-y-3">
             <input type="password" required placeholder="Password saat ini" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
-            <input type="password" required minLength={6} placeholder="Password baru (min 6 karakter)" value={newPassword} onChange={e => setNewPassword(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+            <input type="password" required minLength={6} placeholder="Password baru (min 6)" value={newPassword} onChange={e => setNewPassword(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
             <button type="submit" disabled={pwLoading}
-              className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-lg px-4 py-2.5 transition-colors text-sm">
+              className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-xl px-4 py-3 transition-colors text-sm active:scale-[0.98]">
               {pwLoading ? 'Menyimpan...' : 'Ganti Password'}
             </button>
           </form>
@@ -272,7 +270,7 @@ export default function ProfilePage() {
 
         {/* Logout */}
         <button onClick={() => signOut({ callbackUrl: '/login' })}
-          className="w-full bg-slate-800 hover:bg-slate-700 text-red-400 font-medium rounded-lg px-4 py-3 transition-colors">
+          className="w-full bg-slate-800 hover:bg-slate-700 text-red-400 font-medium rounded-xl px-4 py-3 transition-colors active:scale-[0.98]">
           🚪 Keluar
         </button>
       </main>

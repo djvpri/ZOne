@@ -39,7 +39,7 @@ export default function DashboardPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-[100dvh] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -56,78 +56,91 @@ export default function DashboardPage() {
   })
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-[100dvh] pb-20">
       {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-20 pt-safe">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-bold">Z</span>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+              <span className="text-white font-bold text-lg">Z</span>
             </div>
             <div>
               <h1 className="font-bold text-lg leading-tight">Z One</h1>
-              <p className="text-xs text-slate-400">Ekosistem Digital</p>
+              <p className="text-[11px] text-slate-400">Ekosistem Digital</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right hidden sm:block">
-              <div className="text-sm font-medium">{user.name}</div>
-              <div className="text-xs text-slate-400">{user.role} · {user.plan || 'FREE'}</div>
-            </div>
-            <a href="/profile" className="text-slate-400 hover:text-blue-400 transition-colors p-2" title="Profil">
+          <div className="flex items-center gap-2">
+            <a href="/profile" className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors text-lg" title="Profil">
               👤
             </a>
             {user.role === 'ADMIN' && (
-              <a href="/admin" className="text-slate-400 hover:text-amber-400 transition-colors p-2" title="Admin">
+              <a href="/admin" className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors text-lg" title="Admin">
                 ⚙️
               </a>
             )}
             <button onClick={() => signOut({ callbackUrl: '/login' })}
-              className="text-slate-400 hover:text-red-400 transition-colors p-2">
+              className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors text-lg">
               🚪
             </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      <main className="max-w-6xl mx-auto px-4 py-6">
         {/* Welcome */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h2 className="text-xl sm:text-2xl font-bold mb-1">Halo, {user.name?.split(' ')[0]} 👋</h2>
-          <p className="text-slate-400 text-sm">Akses {apps.length} aplikasi dari satu tempat</p>
+          <p className="text-slate-400 text-sm">{apps.filter(a => a.app.url !== '#').length} aplikasi aktif</p>
+        </div>
+
+        {/* User info card - mobile */}
+        <div className="sm:hidden bg-slate-900 border border-slate-800 rounded-xl p-4 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xl font-bold">
+              {user.name?.charAt(0)?.toUpperCase() || '?'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-medium truncate">{user.name}</div>
+              <div className="text-xs text-slate-400 truncate">{user.email}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-slate-400">Plan</div>
+              <div className="text-sm font-bold text-green-400">{user.plan || 'FREE'}</div>
+            </div>
+          </div>
         </div>
 
         {/* Apps by category */}
         {Object.entries(grouped).map(([cat, items]) => {
           const catInfo = CATEGORY_LABELS[cat] || { label: cat, icon: '📦' }
           return (
-            <div key={cat} className="mb-8">
+            <div key={cat} className="mb-6">
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-lg">{catInfo.icon}</span>
-                <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">{catInfo.label}</h3>
+                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{catInfo.label}</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {items.map(ua => (
                   <a key={ua.app.id} href={ua.app.url !== '#' ? ua.app.url : '#'}
                     target={ua.app.url !== '#' ? '_blank' : undefined}
                     rel="noopener noreferrer"
-                    className={`group block bg-slate-900 border border-slate-800 rounded-xl p-4 transition-all hover:border-slate-600 hover:bg-slate-800/50 ${ua.app.url === '#' ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl flex-shrink-0"
+                    className={`group block bg-slate-900 border border-slate-800 rounded-xl p-4 transition-all active:scale-[0.98] ${ua.app.url !== '#' ? 'hover:border-slate-600 hover:bg-slate-800/50' : 'opacity-50 cursor-not-allowed'}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
                         style={{ backgroundColor: ua.app.color + '20' }}>
                         {ua.app.icon}
                       </div>
-                      <div className="min-w-0 flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-sm">{ua.app.name}</span>
                           {ua.app.url === '#' && (
                             <span className="text-[10px] px-1.5 py-0.5 bg-slate-700 text-slate-400 rounded">Soon</span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">{ua.app.description}</p>
+                        <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{ua.app.description}</p>
                       </div>
                       {ua.app.url !== '#' && (
-                        <span className="text-slate-600 group-hover:text-slate-400 transition-colors text-sm">→</span>
+                        <span className="text-slate-600 group-hover:text-slate-400 transition-colors text-lg">→</span>
                       )}
                     </div>
                   </a>
@@ -137,8 +150,8 @@ export default function DashboardPage() {
           )
         })}
 
-        {/* Quick stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8">
+        {/* Quick stats - desktop only */}
+        <div className="hidden sm:grid grid-cols-4 gap-3 mt-8">
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
             <div className="text-xs text-slate-400 mb-1">Aplikasi Aktif</div>
             <div className="text-2xl font-bold text-blue-400">{apps.filter(a => a.app.url !== '#').length}</div>
@@ -158,10 +171,34 @@ export default function DashboardPage() {
         </div>
 
         {/* Footer */}
-        <div className="mt-12 text-center text-xs text-slate-600">
-          Z One Platform · Ekosistem Digital Terintegrasi · 2026
+        <div className="mt-12 text-center text-xs text-slate-600 pb-4">
+          Z One Platform · 2026
         </div>
       </main>
+
+      {/* Bottom Navigation - Mobile */}
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 z-30 pb-safe">
+        <div className="flex items-center justify-around py-2">
+          <a href="/dashboard" className="flex flex-col items-center gap-1 px-4 py-1 text-blue-400">
+            <span className="text-xl">🏠</span>
+            <span className="text-[10px] font-medium">Beranda</span>
+          </a>
+          <a href="/profile" className="flex flex-col items-center gap-1 px-4 py-1 text-slate-400">
+            <span className="text-xl">👤</span>
+            <span className="text-[10px] font-medium">Profil</span>
+          </a>
+          {user.role === 'ADMIN' && (
+            <a href="/admin" className="flex flex-col items-center gap-1 px-4 py-1 text-slate-400">
+              <span className="text-xl">⚙️</span>
+              <span className="text-[10px] font-medium">Admin</span>
+            </a>
+          )}
+          <button onClick={() => signOut({ callbackUrl: '/login' })} className="flex flex-col items-center gap-1 px-4 py-1 text-slate-400">
+            <span className="text-xl">🚪</span>
+            <span className="text-[10px] font-medium">Keluar</span>
+          </button>
+        </div>
+      </nav>
     </div>
   )
 }

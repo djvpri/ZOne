@@ -74,6 +74,9 @@ export default function DashboardPage() {
               <div className="text-sm font-medium">{user.name}</div>
               <div className="text-xs text-slate-400">{user.role} · {user.plan || 'FREE'}</div>
             </div>
+            <a href="/profile" className="text-slate-400 hover:text-blue-400 transition-colors p-2" title="Profil">
+              👤
+            </a>
             <button onClick={() => signOut({ callbackUrl: '/login' })}
               className="text-slate-400 hover:text-red-400 transition-colors p-2">
               🚪

@@ -42,34 +42,20 @@ export default function LoginPage() {
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true); setError('')
+    setLoading(true)
+    setError('')
+
     try {
-      // First get CSRF token
-      const csrfRes = await fetch('/api/auth/csrf')
-      const { csrfToken } = await csrfRes.json()
-      
-      // Then login
-      const res = await fetch('/api/auth/callback/credentials', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          email: loginEmail,
-          password: loginPassword,
-          csrfToken: csrfToken,
-          redirect: 'false',
-          callbackUrl: '/dashboard',
-          json: 'true',
-        }),
-        credentials: 'include',
+      const res = await signIn('credentials', {
+        email: loginEmail,
+        password: loginPassword,
+        redirect: false,
       })
-      const data = await res.json()
       
-      if (data?.error) {
+      if (res?.error) {
         setError('Email atau password salah')
-      } else if (data?.url) {
-        window.location.href = data.url
       } else {
-        window.location.href = '/dashboard'
+        router.push('/dashboard')
       }
     } catch {
       setError('Gagal login')
@@ -79,7 +65,9 @@ export default function LoginPage() {
   }
 
   async function handleFaceLogin() {
-    setLoading(true); setError(''); setFaceStatus('Mengaktifkan kamera...')
+    setLoading(true)
+    setError('')
+    setFaceStatus('Mengaktifkan kamera...')
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -116,7 +104,11 @@ export default function LoginPage() {
         try {
           const controller = new AbortController()
           const timeout = setTimeout(() => controller.abort(), 30000)
-          const res = await fetch('/api/auth/face-login', { method: 'POST', body: formData, signal: controller.signal })
+          const res = await fetch('/api/auth/face-login', {
+            method: 'POST',
+            body: formData,
+            signal: controller.signal,
+          })
           clearTimeout(timeout)
           if (!res.ok) {
             const errData = await res.json().catch(() => ({}))
@@ -125,7 +117,11 @@ export default function LoginPage() {
           zfaceData = await res.json()
           break
         } catch (err: any) {
-          if (attempt < 3) { setFaceStatus(`Mencoba ulang... (${attempt}/3)`); await new Promise(r => setTimeout(r, 1000)); continue }
+          if (attempt < 3) {
+            setFaceStatus(`Mencoba ulang... (${attempt}/3)`)
+            await new Promise(r => setTimeout(r, 1000))
+            continue
+          }
           throw err
         }
       }
@@ -142,33 +138,21 @@ export default function LoginPage() {
         const errData = await verifyRes.json().catch(() => ({}))
         throw new Error(errData.error || 'Verifikasi gagal')
       }
-      
+
       const verifyData = await verifyRes.json()
-      
-      // Login with the verified user
-      const csrfRes = await fetch('/api/auth/csrf')
-      const { csrfToken } = await csrfRes.json()
-      
-      const loginRes = await fetch('/api/auth/callback/credentials', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          email: verifyData.email,
-          password: `face:${verifyData.personName || verifyData.name}`,
-          csrfToken: csrfToken,
-          redirect: 'false',
-          callbackUrl: '/dashboard',
-          json: 'true',
-        }),
-        credentials: 'include',
+
+      // Use signIn from next-auth/react
+      const signInRes = await signIn('credentials', {
+        email: verifyData.email,
+        password: `face:${verifyData.personName || verifyData.name}`,
+        redirect: false,
       })
-      const loginData = await loginRes.json()
-      
-      if (loginData?.error) {
+
+      if (signInRes?.error) {
         throw new Error('Login gagal setelah verifikasi')
       }
-      
-      window.location.href = '/dashboard'
+
+      router.push('/dashboard')
     } catch (err: any) {
       setError(err.message || 'Face login gagal')
       setFaceStatus('')
@@ -180,7 +164,9 @@ export default function LoginPage() {
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true); setError('')
+    setLoading(true)
+    setError('')
+
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -189,7 +175,18 @@ export default function LoginPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      window.location.href = '/dashboard'
+      
+      // Auto login after register
+      const signInRes = await signIn('credentials', {
+        email: regEmail,
+        password: regPassword,
+        redirect: false,
+      })
+      if (signInRes?.error) {
+        window.location.href = '/login'
+      } else {
+        router.push('/dashboard')
+      }
     } catch (e: any) {
       setError(e.message)
     } finally {

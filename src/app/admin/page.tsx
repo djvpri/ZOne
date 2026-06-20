@@ -18,6 +18,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>('zone')
   const [zoneUsers, setZoneUsers] = useState<ZOneUser[]>([])
   const [crossUsers, setCrossUsers] = useState<CrossAppUser[]>([])
+  const [crossExtra, setCrossExtra] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [crossLoading, setCrossLoading] = useState(false)
   const [error, setError] = useState('')
@@ -64,7 +65,10 @@ export default function AdminPage() {
     try {
       const res = await fetch(`/api/admin/cross-app?app=${appKey}`)
       const data = await res.json()
-      if (res.ok) setCrossUsers(data.users || [])
+      if (res.ok) {
+        setCrossUsers(data.users || [])
+        setCrossExtra(data)
+      }
       else setError(data.error || 'Gagal fetch users')
     } catch { setError('Gagal fetch users dari app') }
     finally { setCrossLoading(false) }
@@ -341,44 +345,44 @@ export default function AdminPage() {
         ) : (
           <>
             {/* ZLaundry Plan Info */}
-            {tab === 'zlaundry' && (crossData as any)?.plan && (
+            {tab === 'zlaundry' && (crossExtra as any)?.plan && (
               <div className="mb-5">
                 <h4 className="text-xs font-bold text-slate-400 uppercase mb-3">Current Plan</h4>
                 <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-white text-sm font-medium">{(crossData as any).plan.info?.name || 'Free'}</span>
+                    <span className="text-white text-sm font-medium">{(crossExtra as any).plan.info?.name || 'Free'}</span>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      (crossData as any).plan.current === 'pro' ? 'bg-blue-500/20 text-blue-300' :
+                      (crossExtra as any).plan.current === 'pro' ? 'bg-blue-500/20 text-blue-300' :
                       'bg-slate-500/20 text-slate-400'
                     }`}>
-                      {(crossData as any).plan.current?.toUpperCase()}
+                      {(crossExtra as any).plan.current?.toUpperCase()}
                     </span>
                   </div>
                   <div className="flex gap-2 mb-2">
-                    {((crossData as any).plan.available || []).map((p: any) => (
+                    {((crossExtra as any).plan.available || []).map((p: any) => (
                       <button key={p.id} onClick={() => {
                         handleCrossPlanAction(p.id, p.id, undefined)
                       }}
                         className={`text-[10px] px-2 py-1 rounded-lg border transition ${
-                          (crossData as any).plan.current === p.id ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500'
+                          (crossExtra as any).plan.current === p.id ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500'
                         }`}>
                         {p.name} {p.hargaBulan > 0 ? `Rp${(p.hargaBulan/1000).toFixed(0)}rb/bln` : 'Gratis'}
                       </button>
                     ))}
                   </div>
                   <div className="text-[10px] text-slate-500">
-                    Max: {(crossData as any).plan.info?.maxOrder === -1 ? '∞' : (crossData as any).plan.info?.maxOrder} pesanan · {(crossData as any).plan.info?.maxCustomer === -1 ? '∞' : (crossData as any).plan.info?.maxCustomer} pelanggan · {(crossData as any).plan.info?.maxUser === -1 ? '∞' : (crossData as any).plan.info?.maxUser} user
+                    Max: {(crossExtra as any).plan.info?.maxOrder === -1 ? '∞' : (crossExtra as any).plan.info?.maxOrder} pesanan · {(crossExtra as any).plan.info?.maxCustomer === -1 ? '∞' : (crossExtra as any).plan.info?.maxCustomer} pelanggan · {(crossExtra as any).plan.info?.maxUser === -1 ? '∞' : (crossExtra as any).plan.info?.maxUser} user
                   </div>
                 </div>
               </div>
             )}
 
             {/* Tenant Plan Info (ZGold, ZBengkel) */}
-            {(crossData as any)?.tenants && (crossData as any).tenants.length > 0 && (
+            {(crossExtra as any)?.tenants && (crossExtra as any).tenants.length > 0 && (
               <div className="mb-5">
                 <h4 className="text-xs font-bold text-slate-400 uppercase mb-3">Tenant Plans</h4>
                 <div className="space-y-2">
-                  {(crossData as any).tenants.map((t: any) => (
+                  {(crossExtra as any).tenants.map((t: any) => (
                     <div key={t.tenantId || t.id} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3">
                       <div className="flex items-center justify-between mb-2">
                         <div>
@@ -419,11 +423,11 @@ export default function AdminPage() {
             )}
 
             {/* ZFace Organizations */}
-            {(crossData as any)?.organizations && (crossData as any).organizations.length > 0 && (
+            {(crossExtra as any)?.organizations && (crossExtra as any).organizations.length > 0 && (
               <div className="mb-5">
                 <h4 className="text-xs font-bold text-slate-400 uppercase mb-3">Organizations</h4>
                 <div className="space-y-2">
-                  {(crossData as any).organizations.map((org: any) => (
+                  {(crossExtra as any).organizations.map((org: any) => (
                     <div key={org.id} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3">
                       <div className="flex items-center justify-between mb-2">
                         <div>

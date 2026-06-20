@@ -243,7 +243,11 @@ export default function LoginPage() {
             </div>
           )}
 
-          <p className="text-center text-xs text-slate-500 mt-4">Demo: admin@zone.id / admin123</p>
+          <p className="text-center text-sm text-slate-400 mt-4">
+            Belum punya akun?{' '}
+            <a href="/register" className="text-blue-400 hover:underline font-medium">Daftar</a>
+          </p>
+          <p className="text-center text-xs text-slate-500 mt-2">Demo: admin@zone.id / admin123</p>
         </div>
       </div>
     </div>

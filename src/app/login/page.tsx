@@ -84,17 +84,39 @@ export default function LoginPage() {
       const formData = new FormData()
       formData.append('file', blob, 'face.jpg')
 
-      const zfaceRes = await fetch('https://zface.zomet.my.id/api/auth/face-login', {
-        method: 'POST',
-        body: formData,
-      })
+      let zfaceData: any = null
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const controller = new AbortController()
+          const timeout = setTimeout(() => controller.abort(), 10000)
+          
+          const zfaceRes = await fetch('https://zface.zomet.my.id/api/auth/face-login', {
+            method: 'POST',
+            body: formData,
+            signal: controller.signal,
+          })
+          clearTimeout(timeout)
 
-      if (!zfaceRes.ok) {
-        const errData = await zfaceRes.json().catch(() => ({}))
-        throw new Error(errData.detail || 'Wajah tidak terdaftar')
+          if (!zfaceRes.ok) {
+            const errData = await zfaceRes.json().catch(() => ({}))
+            throw new Error(errData.detail || 'Wajah tidak terdaftar')
+          }
+
+          zfaceData = await zfaceRes.json()
+          break
+        } catch (fetchErr: any) {
+          if (fetchErr.name === 'AbortError' || fetchErr.message?.includes('fetch')) {
+            if (attempt < 3) {
+              setFaceStatus(`Mencoba ulang... (${attempt}/3)`)
+              await new Promise(r => setTimeout(r, 1000))
+              continue
+            }
+          }
+          throw fetchErr
+        }
       }
 
-      const zfaceData = await zfaceRes.json()
+      if (!zfaceData) throw new Error('Gagal menghubungi ZFace')
       const personName = zfaceData.person.name
       const similarity = zfaceData.person.similarity
       const faceToken = zfaceData.access_token

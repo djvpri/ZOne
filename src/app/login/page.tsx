@@ -247,7 +247,6 @@ export default function LoginPage() {
             Belum punya akun?{' '}
             <a href="/register" className="text-blue-400 hover:underline font-medium">Daftar</a>
           </p>
-          <p className="text-center text-xs text-slate-500 mt-2">Demo: admin@zone.id / admin123</p>
         </div>
       </div>
     </div>

@@ -80,12 +80,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.plan = user.plan
         token.faceId = (user as any).faceId || null
       }
-      // Refresh faceId from DB on each token refresh
-      if (token.id && !token.faceId) {
+      // Refresh role + faceId from DB on each token refresh
+      if (token.id) {
         try {
           const { prisma } = require('@/lib/prisma')
-          const dbUser = await prisma.user.findUnique({ where: { id: token.id as string }, select: { faceId: true } })
-          if (dbUser?.faceId) token.faceId = dbUser.faceId
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { role: true, plan: true, faceId: true },
+          })
+          if (dbUser) {
+            token.role = dbUser.role
+            token.plan = dbUser.plan
+            if (dbUser.faceId) token.faceId = dbUser.faceId
+          }
         } catch {}
       }
       return token

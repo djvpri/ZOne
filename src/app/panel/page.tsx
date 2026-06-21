@@ -330,7 +330,7 @@ export default function AdminPage() {
             <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-5">
               <h3 className="text-white font-bold mb-3">🌐 Z-Apps</h3>
               <div className="space-y-2 text-sm">
-                {Object.entries({ ZOne: 'zone-production-0099.up.railway.app', ZGold: 'zgold-production.up.railway.app', ZBengkel: 'zbengkel-production.up.railway.app', ZLaundry: 'zlaundry-production.up.railway.app', ZFace: 'zface.zomet.my.id' }).map(([k, v]) => (
+                {Object.entries({ ZOne: 'zone.zomet.my.id', ZGold: 'zgold-production.up.railway.app', ZBengkel: 'zbengkel-production.up.railway.app', ZLaundry: 'zlaundry-production.up.railway.app', ZFace: 'zface.zomet.my.id' }).map(([k, v]) => (
                   <div key={k} className="flex justify-between items-center">
                     <span className="text-slate-400">{k}</span>
                     <a href={`https://${v}`} target="_blank" rel="noopener" className="text-blue-400 text-xs">{v} →</a>

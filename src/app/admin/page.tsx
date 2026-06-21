@@ -402,32 +402,6 @@ export default function AdminPage() {
                 <div className="text-center text-slate-500 text-sm py-8">Belum ada tenant</div>
               )}
             </div>
-
-            {/* ZFace — User List */}
-            <div className="mb-5">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-xs font-bold text-slate-400 uppercase">Wajah Terdaftar ({allUsers.length})</h4>
-              </div>
-              {crossLoading ? (
-                <div className="text-center py-8">
-                  <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-                </div>
-              ) : allUsers.length > 0 ? (
-                <div className="space-y-2">
-                  {(filtered as any[]).map((person, i) => (
-                    <div key={i} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3 flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-blue-500/20 flex items-center justify-center text-sm shrink-0">📷</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-white text-sm font-medium truncate">{person.name}</div>
-                        <div className="text-[10px] text-slate-400">{person.faces} foto · {person.org_id?.slice(0,8)}...</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center text-slate-500 text-sm py-6">Belum ada wajah terdaftar</div>
-              )}
-            </div>
           </>
         ) : (
           <>

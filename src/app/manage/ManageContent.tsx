@@ -251,12 +251,20 @@ export default function ManageContent() {
   }
 
   const handleDeleteTenant = async (tenantId: string, name: string) => {
-    if (!confirm(`Hapus tenant "${name}"? Semua data di dalamnya ikut terhapus.`)) return
+    if (!confirm(`Nonaktifkan tenant "${name}"?\nSemua user di tenant ini tidak akan bisa login, tapi bisa diaktifkan ulang kapan saja. Data tidak dihapus.`)) return
     try {
       await call('deleteTenant', { tenantId })
-      flash('Tenant dihapus')
+      flash(`Tenant "${name}" dinonaktifkan`)
       fetchData(activeApp)
     } catch (err: any) { setError(err.message) }
+  }
+
+  const handleReactivateTenant = async (tenantId: string, name: string) => {
+    try {
+      await call('reactivateTenant', { tenantId })
+      flash(`Tenant "${name}" diaktifkan kembali`)
+      fetchData(activeApp)
+    } catch (err: any) { setError(`Gagal aktifkan ulang: ${err.message}`) }
   }
 
   const handleDeleteUser = async (email: string | undefined, name: string) => {
@@ -453,9 +461,12 @@ export default function ManageContent() {
               ) : (
                 <div className="space-y-2">
                   {tenants.map(t => (
-                    <div key={t.id} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3">
+                    <div key={t.id} className={`bg-slate-900/80 border rounded-xl p-3 ${t.active === false ? 'border-slate-800 opacity-60' : 'border-slate-700/50'}`}>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-white text-sm font-medium">{t.name}</span>
+                        <span className="text-white text-sm font-medium flex items-center gap-1.5">
+                          {t.name}
+                          {t.active === false && <span className="text-[9px] px-1.5 py-0.5 bg-slate-700 text-slate-400 rounded-full">nonaktif</span>}
+                        </span>
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                           t.plan === 'enterprise' ? 'bg-purple-500/20 text-purple-300' :
                           t.plan === 'pro' ? 'bg-blue-500/20 text-blue-300' :
@@ -487,10 +498,17 @@ export default function ManageContent() {
                           Set
                         </button>
                       </div>
-                      <button onClick={() => handleDeleteTenant(t.id, t.name)}
-                        className="text-[10px] px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg">
-                        🗑️ Hapus Tenant
-                      </button>
+                      {t.active === false ? (
+                        <button onClick={() => handleReactivateTenant(t.id, t.name)}
+                          className="text-[10px] px-2 py-1 bg-green-500/10 text-green-400 border border-green-500/20 rounded-lg">
+                          ✅ Aktifkan Tenant
+                        </button>
+                      ) : (
+                        <button onClick={() => handleDeleteTenant(t.id, t.name)}
+                          className="text-[10px] px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg">
+                          🗑️ Nonaktifkan Tenant
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>

@@ -14,6 +14,8 @@ export async function POST(req: Request) {
     const zfaceFormData = new FormData()
     zfaceFormData.append('name', name)
     zfaceFormData.append('file', file)
+    // Attach org_id so face goes to correct tenant
+    zfaceFormData.append('org_id', process.env.NEXT_PUBLIC_ZFACE_ORG_ID || '')
 
     const zfaceRes = await fetch('https://zface.zomet.my.id/api/register-public', {
       method: 'POST',

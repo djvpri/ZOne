@@ -12,6 +12,9 @@ export async function POST(req: Request) {
     // Forward to ZFace face-login
     const zfaceFormData = new FormData()
     zfaceFormData.append('file', file)
+    // Search in ZOne tenant only
+    const orgId = process.env.NEXT_PUBLIC_ZFACE_ORG_ID || ''
+    if (orgId) zfaceFormData.append('org_id', orgId)
 
     const zfaceRes = await fetch('https://zface.zomet.my.id/api/auth/face-login', {
       method: 'POST',

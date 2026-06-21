@@ -1,4 +1,4 @@
-const CACHE = 'zone-v4';
+const CACHE = 'zone-v5';
 
 self.addEventListener('install', e => {
   self.skipWaiting();

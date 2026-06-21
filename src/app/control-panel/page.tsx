@@ -12,7 +12,7 @@ interface CrossAppUser {
 
 type Tab = 'zone' | 'zgold' | 'zbengkel' | 'zlaundry' | 'zface' | 'settings'
 
-export default function AdminPage() {
+export default function ControlPanelPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('zone')

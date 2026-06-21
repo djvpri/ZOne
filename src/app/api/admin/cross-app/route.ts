@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     if (!app || !app.url || app.url === '#') {
       return NextResponse.json({ error: `App "${slug}" tidak ditemukan atau belum punya URL` }, { status: 400 })
     }
-    const baseUrl = app.url.replace(/\/+$/, '')
+    const baseUrl = app.url.trim().replace(/\/+$/, '').toLowerCase()
 
     const response = await fetch(`${baseUrl}/api/admin/cross-app`, {
       headers: { Authorization: `Bearer ${CROSS_APP_SECRET}` },
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     if (!app || !app.url || app.url === '#') {
       return NextResponse.json({ error: 'Invalid app' }, { status: 400 })
     }
-    const baseUrl = app.url.replace(/\/+$/, '')
+    const baseUrl = app.url.trim().replace(/\/+$/, '').toLowerCase()
 
     const response = await fetch(`${baseUrl}/api/admin/cross-app`, {
       method: 'POST',

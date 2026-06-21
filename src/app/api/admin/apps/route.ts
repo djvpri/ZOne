@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const slug = String(body.slug || '').trim().toLowerCase()
   const name = String(body.name || '').trim()
-  let url = String(body.url || '').trim().replace(/\/+$/, '')
+  let url = String(body.url || '').trim().replace(/\/+$/, '').toLowerCase()
   if (url && url !== '#' && !/^https?:\/\//i.test(url)) url = `https://${url}`
   if (!slug || !name || !url) {
     return NextResponse.json({ error: 'slug, name, url wajib diisi' }, { status: 400 })
@@ -45,7 +45,7 @@ export async function PATCH(req: NextRequest) {
   const { id, ...rest } = body
   if (!id) return NextResponse.json({ error: 'id wajib diisi' }, { status: 400 })
   if (typeof rest.url === 'string') {
-    rest.url = rest.url.trim().replace(/\/+$/, '')
+    rest.url = rest.url.trim().replace(/\/+$/, '').toLowerCase()
     if (rest.url && rest.url !== '#' && !/^https?:\/\//i.test(rest.url)) rest.url = `https://${rest.url}`
   }
   const app = await prisma.app.update({ where: { id }, data: rest })

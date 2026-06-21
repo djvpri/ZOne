@@ -7,7 +7,7 @@ interface Tenant {
   id: string; name: string; plan?: string; active?: boolean; expires_at?: string | null; quota?: number
 }
 interface AppUser {
-  id?: string; name: string; email?: string; faces?: number; linked_email?: string | null; tenantId?: string | null
+  id?: string; name: string; email?: string; faces?: number; linked_email?: string | null; tenantId?: string | null; active?: boolean
 }
 
 interface AppRow {
@@ -195,6 +195,7 @@ export default function ManageContent() {
         faces: u.faces,
         linked_email: u.linked_email,
         tenantId: u.tenantId != null ? String(u.tenantId) : (u.tenant_id != null ? String(u.tenant_id) : null),
+        active: u.active ?? u.aktif ?? u.isActive,
       }))
       setUsers(normUsers)
       setTenants(normTenants)
@@ -260,12 +261,21 @@ export default function ManageContent() {
 
   const handleDeleteUser = async (email: string | undefined, name: string) => {
     if (!email) { setError(`User "${name}" tidak punya email, tidak bisa dihapus dari sini.`); return }
-    if (!confirm(`Hapus user "${name}" (${email})?\nTIDAK BISA DIBATALKAN.`)) return
+    if (!confirm(`Nonaktifkan user "${name}" (${email})?\nUser tidak akan bisa login lagi, tapi bisa diaktifkan ulang kapan saja.`)) return
     try {
       await call('delete', undefined, email)
-      flash(`User "${name}" dihapus`)
+      flash(`User "${name}" dinonaktifkan`)
       fetchData(activeApp)
     } catch (err: any) { setError(err.message) }
+  }
+
+  const handleReactivateUser = async (email: string | undefined, name: string) => {
+    if (!email) return
+    try {
+      await call('reactivate', undefined, email)
+      flash(`User "${name}" diaktifkan kembali`)
+      fetchData(activeApp)
+    } catch (err: any) { setError(`Gagal aktifkan ulang: ${err.message}`) }
   }
 
   const handleAddUser = async (e: React.FormEvent) => {
@@ -498,9 +508,12 @@ export default function ManageContent() {
             ) : (
               <div className="space-y-2">
                 {users.map((u, i) => (
-                  <div key={u.id || i} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3 flex items-center justify-between gap-2">
+                  <div key={u.id || i} className={`bg-slate-900/80 border rounded-xl p-3 flex items-center justify-between gap-2 ${u.active === false ? 'border-slate-800 opacity-60' : 'border-slate-700/50'}`}>
                     <div className="min-w-0">
-                      <div className="text-white text-sm font-medium truncate">{u.name}</div>
+                      <div className="text-white text-sm font-medium truncate flex items-center gap-1.5">
+                        {u.name}
+                        {u.active === false && <span className="text-[9px] px-1.5 py-0.5 bg-slate-700 text-slate-400 rounded-full flex-shrink-0">nonaktif</span>}
+                      </div>
                       <div className="text-[11px] text-slate-500 truncate">{u.email || (u.linked_email ? `🔑 ${u.linked_email}` : 'belum ada email')}</div>
                       <div className="text-[10px] text-blue-400/80 truncate">
                         🏢 {u.tenantId ? (tenants.find(t => t.id === u.tenantId)?.name || 'Tenant tidak ditemukan') : 'Tanpa tenant'}
@@ -509,10 +522,17 @@ export default function ManageContent() {
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {typeof u.faces === 'number' && <span className="text-[10px] text-slate-500">{u.faces} foto</span>}
                       {u.email && (
-                        <button onClick={() => handleDeleteUser(u.email, u.name)}
-                          className="text-[10px] px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg">
-                          🗑️ Hapus
-                        </button>
+                        u.active === false ? (
+                          <button onClick={() => handleReactivateUser(u.email, u.name)}
+                            className="text-[10px] px-2 py-1 bg-green-500/10 text-green-400 border border-green-500/20 rounded-lg">
+                            ✅ Aktifkan
+                          </button>
+                        ) : (
+                          <button onClick={() => handleDeleteUser(u.email, u.name)}
+                            className="text-[10px] px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg">
+                            🗑️ Nonaktifkan
+                          </button>
+                        )
                       )}
                     </div>
                   </div>

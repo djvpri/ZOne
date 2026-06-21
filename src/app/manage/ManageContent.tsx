@@ -10,19 +10,21 @@ interface AppUser {
   id?: string; name: string; email?: string; faces?: number; linked_email?: string | null
 }
 
-const APPS: { key: string; label: string; icon: string }[] = [
-  { key: 'zgold', label: 'ZGold POS', icon: '💰' },
-  { key: 'zbengkel', label: 'ZBengkel', icon: '🔧' },
-  { key: 'zlaundry', label: 'ZLaundry', icon: '🧺' },
-  { key: 'zface', label: 'ZFace', icon: '📷' },
-]
+interface AppRow {
+  id: string; slug: string; name: string; icon?: string | null; url: string; isActive: boolean
+}
 
 const PLANS = ['starter', 'pro', 'enterprise']
 
 export default function ManageContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [activeApp, setActiveApp] = useState(APPS[0].key)
+  const [apps, setApps] = useState<AppRow[]>([])
+  const [appsLoading, setAppsLoading] = useState(true)
+  const [activeApp, setActiveApp] = useState('')
+  const [showAddApp, setShowAddApp] = useState(false)
+  const [newApp, setNewApp] = useState({ slug: '', name: '', url: '', icon: '📦' })
+  const [appFormLoading, setAppFormLoading] = useState(false)
   const [tenants, setTenants] = useState<Tenant[]>([])
   const [users, setUsers] = useState<AppUser[]>([])
   const [loading, setLoading] = useState(false)
@@ -40,6 +42,45 @@ export default function ManageContent() {
     if (status === 'unauthenticated') router.push('/login')
     if (status === 'authenticated' && !isAdmin) router.push('/dashboard')
   }, [status, session, router])
+
+  const fetchApps = useCallback(async () => {
+    setAppsLoading(true)
+    try {
+      const res = await fetch('/api/admin/apps')
+      const data = await res.json()
+      if (res.ok) {
+        setApps(data.apps || [])
+        if (data.apps?.length && !activeApp) setActiveApp(data.apps[0].slug)
+      }
+    } catch { setError('Gagal memuat daftar app') }
+    finally { setAppsLoading(false) }
+  }, [activeApp])
+
+  useEffect(() => {
+    if (isAdmin) fetchApps()
+  }, [isAdmin, fetchApps])
+
+  const handleAddApp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setAppFormLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/admin/apps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newApp),
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error || 'Gagal menambah app')
+      flash(`App "${newApp.name}" ditambahkan`)
+      setShowAddApp(false)
+      setNewApp({ slug: '', name: '', url: '', icon: '📦' })
+      const apps2 = await (await fetch('/api/admin/apps')).json()
+      setApps(apps2.apps || [])
+      setActiveApp(result.app.slug)
+    } catch (err: any) { setError(err.message) }
+    finally { setAppFormLoading(false) }
+  }
 
   const fetchData = useCallback(async (appKey: string) => {
     setLoading(true)
@@ -59,7 +100,7 @@ export default function ManageContent() {
   }, [])
 
   useEffect(() => {
-    if (isAdmin) fetchData(activeApp)
+    if (isAdmin && activeApp) fetchData(activeApp)
   }, [isAdmin, activeApp, fetchData])
 
   const flash = (msg: string) => { setSuccess(msg); setTimeout(() => setSuccess(''), 3000) }
@@ -152,16 +193,57 @@ export default function ManageContent() {
         {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl px-4 py-3 mb-4 cursor-pointer" onClick={() => setError('')}>{error}</div>}
         {success && <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-sm rounded-xl px-4 py-3 mb-4">{success}</div>}
 
-        <div className="flex gap-1 mb-5 bg-slate-800/50 p-1 rounded-xl overflow-x-auto no-scrollbar">
-          {APPS.map(a => (
-            <button key={a.key} onClick={() => { setActiveApp(a.key); setError(''); setSuccess('') }}
-              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-lg transition ${activeApp === a.key ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
-              <span>{a.icon}</span>{a.label}
-            </button>
-          ))}
+        <div className="flex gap-1 mb-2 bg-slate-800/50 p-1 rounded-xl overflow-x-auto no-scrollbar">
+          {appsLoading ? (
+            <div className="px-3 py-2.5 text-xs text-slate-500">Memuat app…</div>
+          ) : (
+            <>
+              {apps.map(a => (
+                <button key={a.slug} onClick={() => { setActiveApp(a.slug); setError(''); setSuccess('') }}
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-lg transition ${activeApp === a.slug ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
+                  <span>{a.icon || '📦'}</span>{a.name}
+                  {a.url === '#' && <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full" title="URL belum diisi" />}
+                </button>
+              ))}
+              <button onClick={() => setShowAddApp(true)}
+                className="flex-shrink-0 flex items-center gap-1 px-3 py-2.5 text-xs font-medium rounded-lg text-blue-400 border border-dashed border-blue-500/30">
+                + App Baru
+              </button>
+            </>
+          )}
         </div>
 
-        {loading ? (
+        {activeApp && apps.find(a => a.slug === activeApp) && (
+          <button
+            onClick={async () => {
+              const current = apps.find(a => a.slug === activeApp)!
+              const url = prompt(`URL admin API untuk "${current.name}" (mis. https://app-name.up.railway.app):`, current.url === '#' ? '' : current.url)
+              if (!url) return
+              try {
+                const res = await fetch('/api/admin/apps', {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ id: current.id, url }),
+                })
+                if (!res.ok) throw new Error((await res.json()).error || 'Gagal update URL')
+                flash('URL app diperbarui')
+                fetchApps()
+                fetchData(activeApp)
+              } catch (err: any) { setError(err.message) }
+            }}
+            className="text-[11px] text-blue-400 mb-4 underline underline-offset-2"
+          >
+            ✏️ Edit URL app ini
+          </button>
+        )}
+
+        {!appsLoading && apps.length === 0 && (
+          <div className="text-center text-slate-500 text-sm py-10">
+            Belum ada app terdaftar. Tap <b>+ App Baru</b> buat mulai.
+          </div>
+        )}
+
+        {activeApp && (loading ? (
           <div className="text-center py-12">
             <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
           </div>
@@ -249,13 +331,13 @@ export default function ManageContent() {
               </div>
             )}
           </>
-        )}
+        ))}
       </main>
 
       {showAddUser && (
         <div className="fixed inset-0 bg-black/60 z-30 flex items-end sm:items-center justify-center p-4" onClick={() => setShowAddUser(false)}>
           <div onClick={e => e.stopPropagation()} className="bg-slate-900 border border-slate-700 rounded-2xl p-5 w-full max-w-sm">
-            <h3 className="font-bold mb-4">Tambah User ke {APPS.find(a => a.key === activeApp)?.label}</h3>
+            <h3 className="font-bold mb-4">Tambah User ke {apps.find(a => a.slug === activeApp)?.name}</h3>
             <form onSubmit={handleAddUser} className="space-y-3">
               <input required placeholder="Nama" value={newUser.name} onChange={e => setNewUser({ ...newUser, name: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm placeholder:text-slate-500" />
@@ -274,6 +356,36 @@ export default function ManageContent() {
                 <button type="button" onClick={() => setShowAddUser(false)} className="flex-1 bg-slate-800 text-slate-300 text-sm font-semibold py-2.5 rounded-xl">Batal</button>
                 <button type="submit" disabled={userLoading} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold py-2.5 rounded-xl disabled:opacity-50">
                   {userLoading ? '...' : 'Simpan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {showAddApp && (
+        <div className="fixed inset-0 bg-black/60 z-30 flex items-end sm:items-center justify-center p-4" onClick={() => setShowAddApp(false)}>
+          <div onClick={e => e.stopPropagation()} className="bg-slate-900 border border-slate-700 rounded-2xl p-5 w-full max-w-sm">
+            <h3 className="font-bold mb-4">Tambah App Baru</h3>
+            <form onSubmit={handleAddApp} className="space-y-3">
+              <input required placeholder="Nama (mis. ZKasir)" value={newApp.name}
+                onChange={e => setNewApp({ ...newApp, name: e.target.value })}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm placeholder:text-slate-500" />
+              <input required placeholder="Slug (mis. zkasir, huruf kecil)" value={newApp.slug}
+                onChange={e => setNewApp({ ...newApp, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '') })}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm placeholder:text-slate-500" />
+              <input required type="url" placeholder="https://zkasir-production.up.railway.app" value={newApp.url}
+                onChange={e => setNewApp({ ...newApp, url: e.target.value })}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm placeholder:text-slate-500" />
+              <input placeholder="Emoji icon (opsional, mis. 🛒)" value={newApp.icon}
+                onChange={e => setNewApp({ ...newApp, icon: e.target.value })}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm placeholder:text-slate-500" />
+              <p className="text-[11px] text-slate-500">
+                App baru harus sudah implement endpoint <code className="text-blue-400">/api/admin/cross-app</code> dengan secret <code className="text-blue-400">CROSS_APP_SECRET</code> yang sama, supaya bisa dikelola dari sini.
+              </p>
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={() => setShowAddApp(false)} className="flex-1 bg-slate-800 text-slate-300 text-sm font-semibold py-2.5 rounded-xl">Batal</button>
+                <button type="submit" disabled={appFormLoading} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold py-2.5 rounded-xl disabled:opacity-50">
+                  {appFormLoading ? '...' : 'Tambah'}
                 </button>
               </div>
             </form>

@@ -1,45 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 
-// Cross-app management API
-// Proxies requests to ZGold, ZBengkel, ZLaundry admin APIs
+// Cross-app management API — proxy ke admin API tiap app spoke (ZGold, ZBengkel, dst).
+// Daftar app & URL-nya dibaca dari tabel App (database), BUKAN hardcode di kode,
+// supaya nambah app baru cukup tambah baris di /manage, tanpa edit kode/redeploy.
 
-const APPS = {
-  ZGOLD: {
-    name: 'ZGold POS',
-    url: process.env.ZGOLD_URL || 'https://zgold-production.up.railway.app',
-    secret: process.env.CROSS_APP_SECRET || 'z-ecosystem-admin-2026',
-  },
-  ZBENGKEL: {
-    name: 'ZBengkel',
-    url: process.env.ZBENGKEL_URL || 'https://zbengkel-production.up.railway.app',
-    secret: process.env.CROSS_APP_SECRET || 'z-ecosystem-admin-2026',
-  },
-  ZLAUNDRY: {
-    name: 'ZLaundry',
-    url: process.env.ZLAUNDRY_URL || 'https://zlaundry-production.up.railway.app',
-    secret: process.env.CROSS_APP_SECRET || 'z-ecosystem-admin-2026',
-  },
-  ZFACE: {
-    name: 'ZFace',
-    url: process.env.ZFACE_URL || 'https://zface.zomet.my.id',
-    secret: process.env.CROSS_APP_SECRET || 'z-ecosystem-admin-2026',
-  },
+const CROSS_APP_SECRET = process.env.CROSS_APP_SECRET || 'z-ecosystem-admin-2026'
+
+async function getApp(slug: string) {
+  return prisma.app.findUnique({ where: { slug: slug.toLowerCase() } })
 }
 
 export async function GET(req: NextRequest) {
+  const session = await auth()
+  if ((session?.user as any)?.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   try {
-    const appKey = req.nextUrl.searchParams.get('app')?.toUpperCase()
-    if (!appKey || !APPS[appKey as keyof typeof APPS]) {
-      return NextResponse.json({
-        error: 'Missing or invalid app param',
-        available: Object.keys(APPS),
-      }, { status: 400 })
+    const slug = req.nextUrl.searchParams.get('app') || ''
+    const app = await getApp(slug)
+    if (!app || !app.url) {
+      return NextResponse.json({ error: `App "${slug}" tidak ditemukan atau belum punya URL` }, { status: 400 })
     }
 
-    const app = APPS[appKey as keyof typeof APPS]
-
     const response = await fetch(`${app.url}/api/admin/cross-app`, {
-      headers: { Authorization: `Bearer ${app.secret}` },
+      headers: { Authorization: `Bearer ${CROSS_APP_SECRET}` },
     })
 
     if (!response.ok) {
@@ -55,20 +41,21 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  if ((session?.user as any)?.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   try {
-    const { app: appKey, action, email, data } = await req.json()
-
-    const upperKey = String(appKey || '').toUpperCase() as keyof typeof APPS
-    if (!appKey || !APPS[upperKey]) {
+    const { app: slug, action, email, data } = await req.json()
+    const app = await getApp(String(slug || ''))
+    if (!app || !app.url) {
       return NextResponse.json({ error: 'Invalid app' }, { status: 400 })
     }
-
-    const app = APPS[upperKey]
 
     const response = await fetch(`${app.url}/api/admin/cross-app`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${app.secret}`,
+        Authorization: `Bearer ${CROSS_APP_SECRET}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ action, email, data }),

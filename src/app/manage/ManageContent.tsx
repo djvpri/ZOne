@@ -214,27 +214,35 @@ export default function ManageContent() {
         </div>
 
         {activeApp && apps.find(a => a.slug === activeApp) && (
-          <button
-            onClick={async () => {
-              const current = apps.find(a => a.slug === activeApp)!
-              const url = prompt(`URL admin API untuk "${current.name}" (mis. https://app-name.up.railway.app):`, current.url === '#' ? '' : current.url)
-              if (!url) return
-              try {
-                const res = await fetch('/api/admin/apps', {
-                  method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ id: current.id, url }),
-                })
-                if (!res.ok) throw new Error((await res.json()).error || 'Gagal update URL')
-                flash('URL app diperbarui')
-                fetchApps()
-                fetchData(activeApp)
-              } catch (err: any) { setError(err.message) }
-            }}
-            className="text-[11px] text-blue-400 mb-4 underline underline-offset-2"
-          >
-            ✏️ Edit URL app ini
-          </button>
+          <div className="flex items-center gap-3 mb-4 text-[11px]">
+            {apps.find(a => a.slug === activeApp)!.url !== '#' && (
+              <a href={apps.find(a => a.slug === activeApp)!.url} target="_blank" rel="noopener noreferrer"
+                className="text-blue-400 underline underline-offset-2">
+                🔗 Buka {apps.find(a => a.slug === activeApp)!.name}
+              </a>
+            )}
+            <button
+              onClick={async () => {
+                const current = apps.find(a => a.slug === activeApp)!
+                const url = prompt(`URL admin API untuk "${current.name}" (mis. https://app-name.up.railway.app):`, current.url === '#' ? '' : current.url)
+                if (!url) return
+                try {
+                  const res = await fetch('/api/admin/apps', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: current.id, url }),
+                  })
+                  if (!res.ok) throw new Error((await res.json()).error || 'Gagal update URL')
+                  flash('URL app diperbarui')
+                  fetchApps()
+                  fetchData(activeApp)
+                } catch (err: any) { setError(err.message) }
+              }}
+              className="text-blue-400 underline underline-offset-2"
+            >
+              ✏️ Edit URL
+            </button>
+          </div>
         )}
 
         {!appsLoading && apps.length === 0 && (

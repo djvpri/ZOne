@@ -402,6 +402,32 @@ export default function AdminPage() {
                 <div className="text-center text-slate-500 text-sm py-8">Belum ada tenant</div>
               )}
             </div>
+
+            {/* ZFace — User List */}
+            <div className="mb-5">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-xs font-bold text-slate-400 uppercase">Wajah Terdaftar ({allUsers.length})</h4>
+              </div>
+              {crossLoading ? (
+                <div className="text-center py-8">
+                  <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                </div>
+              ) : allUsers.length > 0 ? (
+                <div className="space-y-2">
+                  {(filtered as any[]).map((person, i) => (
+                    <div key={i} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-blue-500/20 flex items-center justify-center text-sm shrink-0">📷</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white text-sm font-medium truncate">{person.name}</div>
+                        <div className="text-[10px] text-slate-400">{person.faces} foto · {person.org_id?.slice(0,8)}...</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-slate-500 text-sm py-6">Belum ada wajah terdaftar</div>
+              )}
+            </div>
           </>
         ) : (
           <>
@@ -528,7 +554,17 @@ export default function AdminPage() {
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
               </div>
-              <button onClick={() => tab === 'zone' ? setShowAddUser(true) : setShowCrossAdd(true)}
+              <button onClick={() => {
+                if (tab === 'zone') setShowAddUser(true)
+                else if ((tab as string) === 'zface') {
+                  setAddFaceTenantId('')
+                  setAddFaceTenantName('')
+                  setAddFaceName('')
+                  setAddFaceFile(null)
+                  setShowAddFace(true)
+                }
+                else setShowCrossAdd(true)
+              }}
                 className="flex-shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-3 rounded-xl active:scale-95 transition">
                 + Tambah
               </button>
@@ -722,13 +758,15 @@ export default function AdminPage() {
               <h3 className="text-white font-bold text-base">📷 Tambah Wajah</h3>
               <button onClick={() => setShowAddFace(false)} className="text-slate-400 hover:text-white text-xl leading-none">&times;</button>
             </div>
-            <p className="text-xs text-slate-400 mb-4">
-              Tenant: <span className="text-white font-medium">{addFaceTenantName}</span>
-            </p>
+            {addFaceTenantName && (
+              <p className="text-xs text-slate-400 mb-4">
+                Tenant: <span className="text-white font-medium">{addFaceTenantName}</span>
+              </p>
+            )}
             <form onSubmit={async e => {
               e.preventDefault()
-              if (!addFaceName || !addFaceFile) {
-                setError('Nama dan foto wajah diperlukan')
+              if (!addFaceName || !addFaceFile || !addFaceTenantId) {
+                setError('Nama, foto wajah, dan tenant diperlukan')
                 return
               }
               setAddFaceLoading(true)
@@ -747,6 +785,7 @@ export default function AdminPage() {
                 if (res.ok) {
                   setSuccess(`Wajah "${addFaceName}" berhasil ditambahkan!`)
                   setShowAddFace(false)
+                  fetchCrossUsers('zface')
                 } else {
                   setError(data.error || data.detail || 'Gagal registrasi wajah')
                 }
@@ -756,14 +795,27 @@ export default function AdminPage() {
                 setAddFaceLoading(false)
               }
             }}>
+              {!addFaceTenantId && (
+                <div className="mb-3">
+                  <label className="block text-xs text-slate-400 mb-1.5">Pilih Tenant *</label>
+                  <select value={addFaceTenantId} onChange={e => setAddFaceTenantId(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required>
+                    <option value="">-- Pilih Tenant --</option>
+                    {(crossExtra as any)?.tenants?.map((t: any) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="mb-3">
-                <label className="block text-xs text-slate-400 mb-1.5">Nama</label>
+                <label className="block text-xs text-slate-400 mb-1.5">Nama *</label>
                 <input type="text" value={addFaceName} onChange={e => setAddFaceName(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Nama orang" required />
               </div>
               <div className="mb-4">
-                <label className="block text-xs text-slate-400 mb-1.5">Foto Wajah</label>
+                <label className="block text-xs text-slate-400 mb-1.5">Foto Wajah *</label>
                 <input type="file" accept="image/*" capture="environment" onChange={e => {
                   if (e.target.files?.[0]) setAddFaceFile(e.target.files[0])
                 }}

@@ -178,8 +178,26 @@ export default function ManageContent() {
       const res = await fetch(`/api/admin/cross-app?app=${appKey}`)
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || data.detail || 'Gagal memuat data')
-      setUsers(data.users || [])
-      setTenants(data.tenants || [])
+
+      // Tiap app punya nama field sedikit beda (id/tenantId, name/namaToko, dst) —
+      // normalisasi di sini biar sisa UI cukup pakai t.id / t.name / u.id dst.
+      const normTenants: Tenant[] = (data.tenants || []).map((t: any) => ({
+        id: String(t.id ?? t.tenantId ?? t.tenant_id),
+        name: t.name ?? t.namaToko ?? t.nama ?? t.tenantName ?? '(tanpa nama)',
+        plan: t.plan,
+        active: t.active ?? t.aktif,
+        expires_at: t.expires_at ?? t.expiresAt ?? t.langganan_sampai ?? null,
+      }))
+      const normUsers: AppUser[] = (data.users || []).map((u: any) => ({
+        id: u.id != null ? String(u.id) : undefined,
+        name: u.name ?? u.nama ?? '(tanpa nama)',
+        email: u.email,
+        faces: u.faces,
+        linked_email: u.linked_email,
+        tenantId: u.tenantId != null ? String(u.tenantId) : (u.tenant_id != null ? String(u.tenant_id) : null),
+      }))
+      setUsers(normUsers)
+      setTenants(normTenants)
     } catch (err: any) {
       setError(err.message || 'Gagal terhubung ke app')
       setTenants([]); setUsers([])

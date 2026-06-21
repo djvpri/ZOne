@@ -318,6 +318,19 @@ export default function AdminPage() {
           </div>
         ) : tab === 'zface' ? (
           <>
+            {/* ZFace — Add User Button */}
+            <div className="flex gap-2 mb-5">
+              <button onClick={() => {
+                setAddFaceTenantId('')
+                setAddFaceTenantName('')
+                setAddFaceName('')
+                setAddFaceFile(null)
+                setShowAddFace(true)
+              }} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-3 rounded-xl active:scale-95 transition">
+                + Tambah User
+              </button>
+            </div>
+
             {/* ZFace — Tenant Plans */}
             <div className="mb-5">
               <div className="flex items-center justify-between mb-3">

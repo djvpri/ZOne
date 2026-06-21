@@ -7,7 +7,7 @@ interface Tenant {
   id: string; name: string; plan?: string; active?: boolean; expires_at?: string | null; quota?: number
 }
 interface AppUser {
-  id?: string; name: string; email?: string; faces?: number; linked_email?: string | null
+  id?: string; name: string; email?: string; faces?: number; linked_email?: string | null; tenantId?: string | null
 }
 
 interface AppRow {
@@ -342,6 +342,9 @@ export default function ManageContent() {
                     <div className="min-w-0">
                       <div className="text-white text-sm font-medium truncate">{u.name}</div>
                       <div className="text-[11px] text-slate-500 truncate">{u.email || (u.linked_email ? `🔑 ${u.linked_email}` : 'belum ada email')}</div>
+                      <div className="text-[10px] text-blue-400/80 truncate">
+                        🏢 {u.tenantId ? (tenants.find(t => t.id === u.tenantId)?.name || 'Tenant tidak ditemukan') : 'Tanpa tenant'}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {typeof u.faces === 'number' && <span className="text-[10px] text-slate-500">{u.faces} foto</span>}

@@ -312,61 +312,6 @@ export default function AdminPage() {
           </div>
         ) : tab === 'zface' ? (
           <>
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-3 mb-5">
-              <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3 text-center">
-                <div className="text-xl font-bold text-white">{allUsers.length}</div>
-                <div className="text-[10px] text-slate-400">Wajah</div>
-              </div>
-              <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3 text-center">
-                <div className="text-xl font-bold text-green-400">{(allUsers as any[]).reduce((s: number, u: any) => s + (u.faces || 0), 0)}</div>
-                <div className="text-[10px] text-slate-400">Total Foto</div>
-              </div>
-              <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3 text-center">
-                <div className="text-xl font-bold text-blue-400">{(allUsers as any[]).filter(u => (u.faces || 0) > 1).length}</div>
-                <div className="text-[10px] text-slate-400">Multi</div>
-              </div>
-            </div>
-
-            {/* Search */}
-            <div className="flex gap-2 mb-5">
-              <div className="relative flex-1">
-                <input type="text" placeholder="Cari wajah..." value={search} onChange={e => setSearch(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
-              </div>
-            </div>
-
-            {/* Face list */}
-            {crossLoading ? (
-              <div className="text-center py-12">
-                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-                <p className="text-sm text-slate-400 mt-3">Loading data dari ZFace...</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {(filtered as any[]).map((person, i) => (
-                  <div key={i} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-lg">
-                        📷
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-white text-sm">{person.name}</div>
-                        <div className="text-xs text-slate-400">{person.faces} foto wajah</div>
-                        <div className="text-[10px] text-slate-500">
-                          {new Date(person.created_at).toLocaleDateString('id-ID')}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {filtered.length === 0 && (
-                  <div className="text-center text-slate-500 text-sm py-8">Belum ada wajah terdaftar</div>
-                )}
-              </div>
-            )}
-
             {/* ZFace — Tenant Plans */}
             <div className="mb-5">
               <div className="flex items-center justify-between mb-3">
@@ -383,7 +328,12 @@ export default function AdminPage() {
                   else { setError('Gagal buat tenant') }
                 }} className="text-[10px] px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg">+ Tambah Tenant</button>
               </div>
-              {(crossExtra as any)?.tenants && (crossExtra as any).tenants.length > 0 ? (
+              {crossLoading ? (
+                <div className="text-center py-8">
+                  <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                  <p className="text-sm text-slate-400 mt-3">Loading...</p>
+                </div>
+              ) : (crossExtra as any)?.tenants && (crossExtra as any).tenants.length > 0 ? (
                 <div className="space-y-2">
                   {(crossExtra as any).tenants.map((t: any) => (
                     <div key={t.id} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3">
@@ -434,7 +384,7 @@ export default function AdminPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center text-slate-500 text-sm py-4">Belum ada tenant</div>
+                <div className="text-center text-slate-500 text-sm py-8">Belum ada tenant</div>
               )}
             </div>
           </>

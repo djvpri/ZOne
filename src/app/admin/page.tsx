@@ -266,6 +266,18 @@ export default function AdminPage() {
     { key: 'settings', label: 'Settings', icon: '⚙️' },
   ]
 
+  // Tenant lookup from crossExtra (handles both ZGold and ZBengkel/ZLaundry naming)
+  const tenantMap = useCallback(() => {
+    const tenants = (crossExtra as any)?.tenants || []
+    const map: Record<number, string> = {}
+    for (const t of tenants) {
+      const id = t.tenantId ?? t.id
+      const name = t.tenantName ?? t.namaToko
+      if (id != null && name) map[Number(id)] = name
+    }
+    return map
+  }, [crossExtra])()
+
   const allUsers = tab === 'zone' ? zoneUsers : crossUsers
   const filtered = allUsers.filter(u =>
     (u.name || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -575,6 +587,11 @@ export default function AdminPage() {
                           <span className="font-medium text-white text-sm">{user.name}</span>
                           {user.faceId && <span className="text-xs">📷</span>}
                           {user.role === 'ADMIN' && <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded">ADMIN</span>}
+                          {tab !== 'zone' && (() => {
+                            const tid = (user as any).tenantId ?? (user as any).tenant_id
+                            const tname = tid ? tenantMap[Number(tid)] : undefined
+                            return tname ? <span className="text-[10px] bg-emerald-500/15 text-emerald-400 px-1.5 py-0.5 rounded">🏪 {tname}</span> : null
+                          })()}
                         </div>
                         <div className="text-xs text-slate-400 truncate mt-0.5">{user.email}</div>
                         <div className="text-[10px] text-slate-500 mt-1">

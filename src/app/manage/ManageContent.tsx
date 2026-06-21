@@ -105,14 +105,14 @@ export default function ManageContent() {
 
   const flash = (msg: string) => { setSuccess(msg); setTimeout(() => setSuccess(''), 3000) }
 
-  const call = async (action: string, data: any) => {
+  const call = async (action: string, data: any, email?: string) => {
     const res = await fetch('/api/admin/cross-app', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ app: activeApp, action, data }),
+      body: JSON.stringify({ app: activeApp, action, email, data }),
     })
     const result = await res.json()
-    if (!res.ok) throw new Error(result.error || result.detail || 'Gagal')
+    if (!res.ok || result?.error) throw new Error(result.error || result.detail || 'Gagal')
     return result
   }
 
@@ -149,6 +149,16 @@ export default function ManageContent() {
     try {
       await call('deleteTenant', { tenantId })
       flash('Tenant dihapus')
+      fetchData(activeApp)
+    } catch (err: any) { setError(err.message) }
+  }
+
+  const handleDeleteUser = async (email: string | undefined, name: string) => {
+    if (!email) { setError(`User "${name}" tidak punya email, tidak bisa dihapus dari sini.`); return }
+    if (!confirm(`Hapus user "${name}" (${email})?\nTIDAK BISA DIBATALKAN.`)) return
+    try {
+      await call('delete', undefined, email)
+      flash(`User "${name}" dihapus`)
       fetchData(activeApp)
     } catch (err: any) { setError(err.message) }
   }
@@ -328,12 +338,20 @@ export default function ManageContent() {
             ) : (
               <div className="space-y-2">
                 {users.map((u, i) => (
-                  <div key={u.id || i} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3 flex items-center justify-between">
-                    <div>
-                      <div className="text-white text-sm font-medium">{u.name}</div>
-                      <div className="text-[11px] text-slate-500">{u.email || (u.linked_email ? `🔑 ${u.linked_email}` : 'belum ada email')}</div>
+                  <div key={u.id || i} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-white text-sm font-medium truncate">{u.name}</div>
+                      <div className="text-[11px] text-slate-500 truncate">{u.email || (u.linked_email ? `🔑 ${u.linked_email}` : 'belum ada email')}</div>
                     </div>
-                    {typeof u.faces === 'number' && <span className="text-[10px] text-slate-500">{u.faces} foto</span>}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {typeof u.faces === 'number' && <span className="text-[10px] text-slate-500">{u.faces} foto</span>}
+                      {u.email && (
+                        <button onClick={() => handleDeleteUser(u.email, u.name)}
+                          className="text-[10px] px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg">
+                          🗑️ Hapus
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

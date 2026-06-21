@@ -83,6 +83,10 @@ export default function ManageContent() {
     if (isAdmin && view === 'access') { fetchZoneUsers(); if (apps.length === 0) fetchApps() }
   }, [isAdmin, view, fetchZoneUsers, apps.length, fetchApps])
 
+  const flash = (msg: string) => { setSuccess(msg); setTimeout(() => setSuccess(''), 3000) }
+
+  const genPassword = () => Math.random().toString(36).slice(-5) + Math.random().toString(36).slice(-5).toUpperCase()
+
   const toggleAccess = async (userId: string, appId: string, nextActive: boolean) => {
     const key = `${userId}:${appId}`
     setAccessSaving(key)
@@ -103,6 +107,44 @@ export default function ManageContent() {
             : [...u.appLinks, { appId, active: nextActive }],
         }
       }))
+
+      // Aktifkan akses -> sekalian buatkan akun login di app itu kalau belum ada
+      if (nextActive) {
+        const zUser = zoneUsers.find(u => u.id === userId)
+        const app = apps.find(a => a.id === appId)
+        if (zUser && app && app.url && app.url !== '#') {
+          try {
+            const checkRes = await fetch(`/api/admin/cross-app?app=${app.slug}`)
+            const checkData = await checkRes.json()
+            const already = (checkData.users || []).some((u: any) => u.email?.toLowerCase() === zUser.email.toLowerCase())
+            if (!already) {
+              const tempPassword = genPassword()
+              const createRes = await fetch('/api/admin/cross-app', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  app: app.slug, action: 'create',
+                  data: { name: zUser.name, email: zUser.email, password: tempPassword },
+                }),
+              })
+              const createResult = await createRes.json()
+              if (createRes.ok && !createResult.error) {
+                flash(`Akses diaktifkan + akun ${app.name} dibuat. Password sementara: ${tempPassword}`)
+              } else {
+                flash(`Akses diaktifkan, tapi akun ${app.name} gagal dibuat otomatis: ${createResult.error || 'unknown error'}`)
+              }
+            } else {
+              flash(`Akses ${app.name} diaktifkan (akun sudah ada sebelumnya)`)
+            }
+          } catch {
+            flash('Akses diaktifkan, tapi gagal cek/buat akun otomatis di app tujuan')
+          }
+        } else {
+          flash('Akses diaktifkan')
+        }
+      } else {
+        flash('Akses dimatikan')
+      }
     } catch (err: any) { setError(err.message) }
     finally { setAccessSaving('') }
   }
@@ -149,8 +191,6 @@ export default function ManageContent() {
   useEffect(() => {
     if (isAdmin && activeApp) fetchData(activeApp)
   }, [isAdmin, activeApp, fetchData])
-
-  const flash = (msg: string) => { setSuccess(msg); setTimeout(() => setSuccess(''), 3000) }
 
   const call = async (action: string, data: any, email?: string) => {
     const res = await fetch('/api/admin/cross-app', {

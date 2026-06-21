@@ -11,6 +11,10 @@ type App = {
 
 type UserApp = { app: App; active: boolean }
 
+// App yang sudah punya endpoint /sso di sisinya -> dibuka lewat handoff token,
+// supaya user tidak perlu login ulang manual. App lain tetap link langsung seperti biasa.
+const SSO_ENABLED_SLUGS = new Set(['zface'])
+
 const CATEGORY_LABELS: Record<string, { label: string; icon: string }> = {
   pos: { label: 'Point of Sale', icon: '🏪' },
   hr: { label: 'Human Resources', icon: '👥' },
@@ -120,8 +124,11 @@ export default function DashboardPage() {
                 <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{catInfo.label}</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {items.map(ua => (
-                  <a key={ua.app.id} href={ua.app.url !== '#' ? ua.app.url : '#'}
+                {items.map(ua => {
+                  const ssoEnabled = SSO_ENABLED_SLUGS.has(ua.app.slug) && ua.app.url !== '#'
+                  const href = ssoEnabled ? `/api/sso/${ua.app.slug}` : (ua.app.url !== '#' ? ua.app.url : '#')
+                  return (
+                  <a key={ua.app.id} href={href}
                     target={ua.app.url !== '#' ? '_blank' : undefined}
                     rel="noopener noreferrer"
                     className={`group block bg-slate-900 border border-slate-800 rounded-xl p-4 transition-all active:scale-[0.98] ${ua.app.url !== '#' ? 'hover:border-slate-600 hover:bg-slate-800/50' : 'opacity-50 cursor-not-allowed'}`}>
@@ -144,7 +151,8 @@ export default function DashboardPage() {
                       )}
                     </div>
                   </a>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )

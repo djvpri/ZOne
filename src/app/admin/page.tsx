@@ -43,6 +43,7 @@ export default function AdminPage() {
   const [crossAppPhone, setCrossAppPhone] = useState('')
   const [crossAppPassword, setCrossAppPassword] = useState('')
   const [crossAppRole, setCrossAppRole] = useState('')
+  const [crossAppTenantId, setCrossAppTenantId] = useState('')
   const [crossAppLoading, setCrossAppLoading] = useState(false)
 
   const isAdmin = (session?.user as any)?.role === 'ADMIN'
@@ -163,6 +164,7 @@ export default function AdminPage() {
             password: crossAppPassword,
             role: crossAppRole || undefined,
             phone: crossAppPhone || undefined,
+            tenantId: crossAppTenantId || undefined,
           },
         }),
       })
@@ -712,6 +714,18 @@ export default function AdminPage() {
                 <input type="password" value={crossAppPassword} required minLength={6} onChange={e => setCrossAppPassword(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
+              {(tab === 'zgold' || tab === 'zbengkel' || tab === 'zlaundry') && (crossExtra as any)?.tenants?.length > 0 && (
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1.5">Tenant</label>
+                  <select value={crossAppTenantId} onChange={e => setCrossAppTenantId(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">-- Pilih Tenant (opsional) --</option>
+                    {(crossExtra as any).tenants.map((t: any) => (
+                      <option key={t.id || t.tenantId} value={t.id || t.tenantId}>{t.namaToko || t.tenantName || t.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="block text-xs text-slate-400 mb-1.5">Role</label>
                 <div className="flex gap-2">

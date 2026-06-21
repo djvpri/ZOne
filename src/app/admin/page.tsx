@@ -7,7 +7,7 @@ interface ZOneUser {
   id: string; name: string; email: string; role: string; faceId: string | null; phone: string | null; createdAt: string
 }
 interface CrossAppUser {
-  id: string; name: string; email: string; role: string; faceId: string | null; tenantId?: number; aktif?: boolean; createdAt: string
+  id: string; name: string; email: string; role: string; faceId: string | null; tenantId?: number; aktif?: boolean; createdAt: string; linked_email?: string | null
 }
 
 type Tab = 'zone' | 'zgold' | 'zbengkel' | 'zlaundry' | 'zface' | 'settings'
@@ -214,6 +214,23 @@ export default function AdminPage() {
         setError(result.error || 'Gagal update plan')
       }
     } catch { setError('Gagal update plan') }
+  }
+
+  const handleLinkFace = async (faceName: string, email: string) => {
+    try {
+      const res = await fetch('/api/admin/cross-app', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ app: 'zface', action: 'linkFaceUser', data: { name: faceName, email } }),
+      })
+      const result = await res.json()
+      if (res.ok) {
+        setSuccess(email ? `Wajah "${faceName}" ditautkan ke ${email}` : `Tautan wajah "${faceName}" dilepas`)
+        fetchCrossUsers('zface')
+      } else {
+        setError(result.detail || result.error || 'Gagal menautkan wajah')
+      }
+    } catch { setError('Gagal menautkan wajah') }
   }
 
   const handleTenantAction = async (action: string, data: any) => {
@@ -427,6 +444,56 @@ export default function AdminPage() {
                 </div>
               ) : (
                 <div className="text-center text-slate-500 text-sm py-8">Belum ada tenant</div>
+              )}
+            </div>
+
+            {/* ZFace — Daftar Wajah & Tautan Akun Login */}
+            <div className="mb-5">
+              <h4 className="text-xs font-bold text-slate-400 uppercase mb-3">Wajah Terdaftar — Tautkan Akun Login</h4>
+              <p className="text-[11px] text-slate-500 mb-3">
+                Tautkan nama wajah ke email akun login ZFace, supaya "Login dengan Wajah" di dashboard ZFace bisa langsung masuk.
+              </p>
+              {crossLoading ? (
+                <div className="text-center py-8">
+                  <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                </div>
+              ) : filtered.length > 0 ? (
+                <div className="space-y-2">
+                  {filtered.map((u) => (
+                    <div key={u.name} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-white text-sm font-medium">{u.name}</span>
+                        <span className="text-[10px] text-slate-500">{(u as any).faces} foto</span>
+                      </div>
+                      {u.linked_email ? (
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] text-green-400">🔑 {u.linked_email}</span>
+                          <button onClick={() => handleLinkFace(u.name, '')}
+                            className="text-[10px] px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg">
+                            Lepas Tautan
+                          </button>
+                        </div>
+                      ) : (
+                        <form onSubmit={(e) => {
+                          e.preventDefault()
+                          const input = (e.target as HTMLFormElement).elements.namedItem('email') as HTMLInputElement
+                          const email = input.value.trim()
+                          if (!email) return
+                          handleLinkFace(u.name, email)
+                          input.value = ''
+                        }} className="flex gap-2">
+                          <input name="email" type="email" placeholder="email akun login ZFace"
+                            className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white placeholder:text-slate-500" />
+                          <button type="submit" className="text-[10px] px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium">
+                            Tautkan
+                          </button>
+                        </form>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-slate-500 text-sm py-8">Belum ada wajah terdaftar</div>
               )}
             </div>
           </>

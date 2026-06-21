@@ -16,9 +16,18 @@ interface AppRow {
 
 const PLANS = ['starter', 'pro', 'enterprise']
 
+interface ZoneUser {
+  id: string; name: string; email: string; role: string
+  appLinks: { appId: string; active: boolean }[]
+}
+
 export default function ManageContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const [view, setView] = useState<'apps' | 'access'>('apps')
+  const [zoneUsers, setZoneUsers] = useState<ZoneUser[]>([])
+  const [zoneUsersLoading, setZoneUsersLoading] = useState(false)
+  const [accessSaving, setAccessSaving] = useState<string>('')
   const [apps, setApps] = useState<AppRow[]>([])
   const [appsLoading, setAppsLoading] = useState(true)
   const [activeApp, setActiveApp] = useState('')
@@ -43,6 +52,16 @@ export default function ManageContent() {
     if (status === 'authenticated' && !isAdmin) router.push('/dashboard')
   }, [status, session, router])
 
+  const fetchZoneUsers = useCallback(async () => {
+    setZoneUsersLoading(true)
+    try {
+      const res = await fetch('/api/admin/users')
+      const data = await res.json()
+      if (res.ok) setZoneUsers(data.users || [])
+    } catch { setError('Gagal memuat daftar user ZOne') }
+    finally { setZoneUsersLoading(false) }
+  }, [])
+
   const fetchApps = useCallback(async () => {
     setAppsLoading(true)
     try {
@@ -59,6 +78,34 @@ export default function ManageContent() {
   useEffect(() => {
     if (isAdmin) fetchApps()
   }, [isAdmin, fetchApps])
+
+  useEffect(() => {
+    if (isAdmin && view === 'access') { fetchZoneUsers(); if (apps.length === 0) fetchApps() }
+  }, [isAdmin, view, fetchZoneUsers, apps.length, fetchApps])
+
+  const toggleAccess = async (userId: string, appId: string, nextActive: boolean) => {
+    const key = `${userId}:${appId}`
+    setAccessSaving(key)
+    try {
+      const res = await fetch('/api/admin/user-apps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, appId, active: nextActive }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error || 'Gagal mengubah akses')
+      setZoneUsers(prev => prev.map(u => {
+        if (u.id !== userId) return u
+        const has = u.appLinks.some(l => l.appId === appId)
+        return {
+          ...u,
+          appLinks: has
+            ? u.appLinks.map(l => l.appId === appId ? { ...l, active: nextActive } : l)
+            : [...u.appLinks, { appId, active: nextActive }],
+        }
+      }))
+    } catch (err: any) { setError(err.message) }
+    finally { setAccessSaving('') }
+  }
 
   const handleAddApp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -203,6 +250,61 @@ export default function ManageContent() {
         {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl px-4 py-3 mb-4 cursor-pointer" onClick={() => setError('')}>{error}</div>}
         {success && <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-sm rounded-xl px-4 py-3 mb-4">{success}</div>}
 
+        <div className="flex gap-1 mb-4 bg-slate-800/30 p-1 rounded-xl">
+          <button onClick={() => setView('apps')}
+            className={`flex-1 text-xs font-semibold py-2 rounded-lg transition ${view === 'apps' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>
+            📦 Kelola Per-App
+          </button>
+          <button onClick={() => setView('access')}
+            className={`flex-1 text-xs font-semibold py-2 rounded-lg transition ${view === 'access' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>
+            🔐 Akses User
+          </button>
+        </div>
+
+        {view === 'access' ? (
+          <div>
+            <p className="text-[11px] text-slate-500 mb-4">
+              Atur app mana yang bisa dibuka tiap user dari dashboard Z One. Satu user bisa jadi member di beberapa app sekaligus, tanpa otomatis dapat akses ke app lain.
+            </p>
+            {zoneUsersLoading ? (
+              <div className="text-center py-12">
+                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+              </div>
+            ) : zoneUsers.length === 0 ? (
+              <div className="text-center text-slate-500 text-sm py-8">Belum ada user ZOne</div>
+            ) : (
+              <div className="space-y-3">
+                {zoneUsers.map(u => (
+                  <div key={u.id} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3">
+                    <div className="mb-2.5">
+                      <div className="text-white text-sm font-medium">{u.name}</div>
+                      <div className="text-[11px] text-slate-500">{u.email}</div>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {apps.map(a => {
+                        const link = u.appLinks.find(l => l.appId === a.id)
+                        const isOn = !!link?.active
+                        const key = `${u.id}:${a.id}`
+                        return (
+                          <button key={a.id}
+                            disabled={accessSaving === key}
+                            onClick={() => toggleAccess(u.id, a.id, !isOn)}
+                            className={`flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border transition disabled:opacity-50 ${
+                              isOn ? 'bg-green-500/15 text-green-400 border-green-500/30' : 'bg-slate-800 text-slate-500 border-slate-700'
+                            }`}>
+                            <span>{a.icon || '📦'}</span>{a.name}
+                            {accessSaving === key ? '…' : (isOn ? ' ✓' : '')}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+        <>
         <div className="flex gap-1 mb-2 bg-slate-800/50 p-1 rounded-xl overflow-x-auto no-scrollbar">
           {appsLoading ? (
             <div className="px-3 py-2.5 text-xs text-slate-500">Memuat app…</div>
@@ -361,6 +463,8 @@ export default function ManageContent() {
             )}
           </>
         ))}
+        </>
+        )}
       </main>
 
       {showAddUser && (

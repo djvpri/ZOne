@@ -578,7 +578,7 @@ export default function AdminPage() {
                         </div>
                         <div className="text-xs text-slate-400 truncate mt-0.5">{user.email}</div>
                         <div className="text-[10px] text-slate-500 mt-1">
-                          {new Date(user.createdAt).toLocaleDateString('id-ID')}
+                          {user.createdAt ? new Date(user.createdAt).toLocaleDateString('id-ID') : '-'}
                         </div>
                       </div>
                     </div>

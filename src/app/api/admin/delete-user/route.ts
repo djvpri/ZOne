@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-
-const ADMIN_KEY = process.env.ADMIN_KEY || 'admin123'
 
 export async function POST(req: Request) {
   try {
-    const { email, adminKey } = await req.json()
-
-    if (adminKey !== ADMIN_KEY) {
+    // Server-side auth: only ADMIN can delete users
+    const session = await getServerSession(authOptions)
+    if (!session || (session.user as any)?.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const { email } = await req.json()
 
     if (!email) {
       return NextResponse.json({ error: 'Email required' }, { status: 400 })
@@ -18,6 +20,11 @@ export async function POST(req: Request) {
     const user = await prisma.user.findUnique({ where: { email } })
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Prevent self-deletion
+    if (user.email === session.user?.email) {
+      return NextResponse.json({ error: 'Tidak bisa hapus akun sendiri' }, { status: 400 })
     }
 
     // Delete related records first

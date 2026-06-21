@@ -107,7 +107,7 @@ export default function AdminPage() {
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(action === 'unlink-face' ? { email } : { email, ...(action === 'delete' ? { adminKey: 'admin123' } : data) }),
+        body: JSON.stringify(action === 'unlink-face' ? { email } : { email, ...data }),
       })
       if (res.ok) { setSuccess(`${action} berhasil`); fetchZoneUsers() }
       else { const d = await res.json(); setError(d.error || 'Gagal') }

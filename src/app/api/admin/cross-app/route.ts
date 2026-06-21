@@ -20,11 +20,12 @@ export async function GET(req: NextRequest) {
   try {
     const slug = req.nextUrl.searchParams.get('app') || ''
     const app = await getApp(slug)
-    if (!app || !app.url) {
+    if (!app || !app.url || app.url === '#') {
       return NextResponse.json({ error: `App "${slug}" tidak ditemukan atau belum punya URL` }, { status: 400 })
     }
+    const baseUrl = app.url.replace(/\/+$/, '')
 
-    const response = await fetch(`${app.url}/api/admin/cross-app`, {
+    const response = await fetch(`${baseUrl}/api/admin/cross-app`, {
       headers: { Authorization: `Bearer ${CROSS_APP_SECRET}` },
     })
 
@@ -48,11 +49,12 @@ export async function POST(req: NextRequest) {
   try {
     const { app: slug, action, email, data } = await req.json()
     const app = await getApp(String(slug || ''))
-    if (!app || !app.url) {
+    if (!app || !app.url || app.url === '#') {
       return NextResponse.json({ error: 'Invalid app' }, { status: 400 })
     }
+    const baseUrl = app.url.replace(/\/+$/, '')
 
-    const response = await fetch(`${app.url}/api/admin/cross-app`, {
+    const response = await fetch(`${baseUrl}/api/admin/cross-app`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${CROSS_APP_SECRET}`,

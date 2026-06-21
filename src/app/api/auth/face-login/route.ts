@@ -15,6 +15,8 @@ export async function POST(req: Request) {
     // Search in ZOne tenant only
     const orgId = process.env.NEXT_PUBLIC_ZFACE_ORG_ID || ''
     if (orgId) zfaceFormData.append('org_id', orgId)
+    // Match ZFace UI threshold (0.40 instead of default 0.45)
+    zfaceFormData.append('threshold', '0.40')
 
     const zfaceRes = await fetch('https://zface.zomet.my.id/api/auth/face-login', {
       method: 'POST',

@@ -465,9 +465,9 @@ export default function AdminPage() {
                         <span className="text-white text-sm font-medium">{u.name}</span>
                         <span className="text-[10px] text-slate-500">{(u as any).faces} foto</span>
                       </div>
-                      {u.linked_email ? (
+                      {(u as any).linked_email ? (
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] text-green-400">🔑 {u.linked_email}</span>
+                          <span className="text-[11px] text-green-400">🔑 {(u as any).linked_email}</span>
                           <button onClick={() => handleLinkFace(u.name, '')}
                             className="text-[10px] px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg">
                             Lepas Tautan

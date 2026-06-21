@@ -32,7 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   }
 
   // Cek hak akses: user harus punya UserApp aktif untuk app ini.
-  const link = user.appLinks.find((ua) => ua.app.slug === slug)
+  const link = user.appLinks.find((ua: { app: { slug: string }; active: boolean }) => ua.app.slug === slug)
   if (!link || !link.active) {
     return NextResponse.redirect(new URL(`/dashboard?sso_error=no_access&app=${slug}`, req.url))
   }

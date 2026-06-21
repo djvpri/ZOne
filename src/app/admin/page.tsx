@@ -32,6 +32,12 @@ export default function AdminPage() {
   const [addRole, setAddRole] = useState('USER')
   const [addLoading, setAddLoading] = useState(false)
   const [showCrossAdd, setShowCrossAdd] = useState(false)
+  const [showAddFace, setShowAddFace] = useState(false)
+  const [addFaceTenantId, setAddFaceTenantId] = useState('')
+  const [addFaceTenantName, setAddFaceTenantName] = useState('')
+  const [addFaceName, setAddFaceName] = useState('')
+  const [addFaceFile, setAddFaceFile] = useState<File | null>(null)
+  const [addFaceLoading, setAddFaceLoading] = useState(false)
   const [crossAppName, setCrossAppName] = useState('')
   const [crossAppEmail, setCrossAppEmail] = useState('')
   const [crossAppPhone, setCrossAppPhone] = useState('')
@@ -366,6 +372,15 @@ export default function AdminPage() {
                         Quota: {t.quota || 'Unlimited'} wajah · {t.expires_at ? `Exp: ${new Date(t.expires_at).toLocaleDateString('id-ID')}` : 'Active'}
                       </div>
                       <div className="flex gap-2 mt-2">
+                        <button onClick={() => {
+                          setAddFaceTenantId(t.id)
+                          setAddFaceTenantName(t.name)
+                          setAddFaceName('')
+                          setAddFaceFile(null)
+                          setShowAddFace(true)
+                        }} className="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg">
+                          📷 Tambah Wajah
+                        </button>
                         <button onClick={async () => {
                           if (confirm(`Hapus tenant "${t.name}"? Semua wajah di tenant ini juga akan dihapus!`)) {
                             await fetch('/api/admin/cross-app', {
@@ -693,6 +708,71 @@ export default function AdminPage() {
               <button type="submit" disabled={crossAppLoading}
                 className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold rounded-xl py-3.5 mt-2 transition active:scale-[0.98]">
                 {crossAppLoading ? 'Menambahkan...' : '✓ Tambah ke ' + tab.toUpperCase()}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Face Modal */}
+      {showAddFace && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setShowAddFace(false)}>
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-bold text-base">📷 Tambah Wajah</h3>
+              <button onClick={() => setShowAddFace(false)} className="text-slate-400 hover:text-white text-xl leading-none">&times;</button>
+            </div>
+            <p className="text-xs text-slate-400 mb-4">
+              Tenant: <span className="text-white font-medium">{addFaceTenantName}</span>
+            </p>
+            <form onSubmit={async e => {
+              e.preventDefault()
+              if (!addFaceName || !addFaceFile) {
+                setError('Nama dan foto wajah diperlukan')
+                return
+              }
+              setAddFaceLoading(true)
+              setError('')
+              setSuccess('')
+              try {
+                const fd = new FormData()
+                fd.append('name', addFaceName)
+                fd.append('file', addFaceFile)
+                fd.append('org_id', addFaceTenantId)
+                const res = await fetch('/api/auth/register-face', {
+                  method: 'POST',
+                  body: fd,
+                })
+                const data = await res.json()
+                if (res.ok) {
+                  setSuccess(`Wajah "${addFaceName}" berhasil ditambahkan!`)
+                  setShowAddFace(false)
+                } else {
+                  setError(data.error || data.detail || 'Gagal registrasi wajah')
+                }
+              } catch {
+                setError('Gagal registrasi wajah')
+              } finally {
+                setAddFaceLoading(false)
+              }
+            }}>
+              <div className="mb-3">
+                <label className="block text-xs text-slate-400 mb-1.5">Nama</label>
+                <input type="text" value={addFaceName} onChange={e => setAddFaceName(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Nama orang" required />
+              </div>
+              <div className="mb-4">
+                <label className="block text-xs text-slate-400 mb-1.5">Foto Wajah</label>
+                <input type="file" accept="image/*" capture="environment" onChange={e => {
+                  if (e.target.files?.[0]) setAddFaceFile(e.target.files[0])
+                }}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:text-xs"
+                  required />
+              </div>
+              <button type="submit" disabled={addFaceLoading}
+                className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold rounded-xl py-3.5 mt-2 transition active:scale-[0.98]">
+                {addFaceLoading ? '⏳ Mendaftarkan...' : '📷 Daftarkan Wajah'}
               </button>
             </form>
           </div>

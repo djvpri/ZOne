@@ -1,7 +1,7 @@
 'use client'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { InstallPrompt } from '../pwa-register'
 
 type App = {
@@ -11,8 +11,6 @@ type App = {
 
 type UserApp = { app: App; active: boolean }
 
-// App yang sudah punya endpoint /sso di sisinya -> dibuka lewat handoff token,
-// supaya user tidak perlu login ulang manual. App lain tetap link langsung seperti biasa.
 const SSO_ENABLED_SLUGS = new Set(['zface'])
 
 const CATEGORY_LABELS: Record<string, { label: string; icon: string }> = {
@@ -31,6 +29,53 @@ export default function DashboardPage() {
   const router = useRouter()
   const [apps, setApps] = useState<UserApp[]>([])
   const [loading, setLoading] = useState(true)
+
+  // QR Scanner state
+  const [showQrScanner, setShowQrScanner] = useState(false)
+  const [qrInput, setQrInput] = useState('')
+  const [qrScanStatus, setQrScanStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [qrMsg, setQrMsg] = useState('')
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+
+  const stopScanCamera = useCallback(() => {
+    if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null }
+  }, [])
+
+  const closeQrScanner = useCallback(() => {
+    stopScanCamera(); setShowQrScanner(false); setQrInput(''); setQrScanStatus('idle'); setQrMsg('')
+  }, [stopScanCamera])
+
+  // Approve QR dengan token yang sudah diketahui (dari URL atau input manual)
+  const approveQrToken = useCallback(async (token: string) => {
+    setQrScanStatus('loading'); setQrMsg('')
+    try {
+      const res = await fetch('/api/qr/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, action: 'scan' }),
+      })
+      const d = await res.json()
+      if (!res.ok) { setQrScanStatus('error'); setQrMsg(d.error || 'QR tidak valid'); return }
+      setQrScanStatus('idle'); setQrMsg(`Login sebagai ${d.user?.name} — konfirmasi?`)
+      // Langsung approve setelah scan
+      const res2 = await fetch('/api/qr/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, action: 'approve' }),
+      })
+      if (res2.ok) { setQrScanStatus('success'); setQrMsg('✅ Login berhasil! Komputer sudah bisa masuk.') }
+      else { setQrScanStatus('error'); setQrMsg('Gagal approve QR') }
+    } catch { setQrScanStatus('error'); setQrMsg('Gagal menghubungi server') }
+  }, [])
+
+  // Parse token dari URL QR (zone.zomet.my.id/qr-approve?token=xxx)
+  const extractToken = (raw: string) => {
+    try {
+      const url = new URL(raw)
+      return url.searchParams.get('token') || raw
+    } catch { return raw.trim() }
+  }
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
@@ -75,6 +120,10 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={() => setShowQrScanner(true)}
+              className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors text-lg" title="Scan QR Login">
+              📷
+            </button>
             <a href="/profile" className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors text-lg" title="Profil">
               👤
             </a>
@@ -190,6 +239,10 @@ export default function DashboardPage() {
             <span className="text-xl">🏠</span>
             <span className="text-[10px] font-medium">Beranda</span>
           </a>
+          <button onClick={() => setShowQrScanner(true)} className="flex flex-col items-center gap-1 px-4 py-1 text-slate-400">
+            <span className="text-xl">📷</span>
+            <span className="text-[10px] font-medium">Scan QR</span>
+          </button>
           <a href="/profile" className="flex flex-col items-center gap-1 px-4 py-1 text-slate-400">
             <span className="text-xl">👤</span>
             <span className="text-[10px] font-medium">Profil</span>
@@ -208,6 +261,54 @@ export default function DashboardPage() {
       </nav>
 
       <InstallPrompt />
+
+      {/* Modal QR Scanner */}
+      {showQrScanner && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-4" onClick={closeQrScanner}>
+          <div onClick={e => e.stopPropagation()} className="bg-slate-900 border border-slate-700 rounded-2xl p-5 w-full max-w-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-white">📷 Scan QR Login</h3>
+              <button onClick={closeQrScanner} className="text-slate-400 hover:text-white text-xl">✕</button>
+            </div>
+            <p className="text-xs text-slate-400 mb-4">
+              Scan QR code yang tampil di layar komputer, atau tempel URL/token QR-nya di bawah.
+            </p>
+
+            {qrScanStatus === 'success' ? (
+              <div className="text-center py-6">
+                <div className="text-5xl mb-3">✅</div>
+                <p className="text-green-400 font-medium">{qrMsg}</p>
+                <button onClick={closeQrScanner} className="mt-4 bg-slate-800 text-slate-300 text-sm px-4 py-2 rounded-xl">Tutup</button>
+              </div>
+            ) : (
+              <>
+                <div className="flex gap-2 mb-3">
+                  <input
+                    type="text"
+                    value={qrInput}
+                    onChange={e => setQrInput(e.target.value)}
+                    placeholder="Tempel URL atau token QR..."
+                    className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-slate-500"
+                  />
+                  <button
+                    onClick={() => approveQrToken(extractToken(qrInput))}
+                    disabled={!qrInput.trim() || qrScanStatus === 'loading'}
+                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2.5 rounded-xl"
+                  >
+                    {qrScanStatus === 'loading' ? '...' : 'OK'}
+                  </button>
+                </div>
+                {qrMsg && (
+                  <p className={`text-xs mt-1 ${qrScanStatus === 'error' ? 'text-red-400' : 'text-slate-400'}`}>{qrMsg}</p>
+                )}
+                <p className="text-[11px] text-slate-600 mt-3 text-center">
+                  💡 Tip: Di komputer buka zone.zomet.my.id/login → tab 📱 QR → tampil QR code
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

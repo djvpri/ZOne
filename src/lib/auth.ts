@@ -1,5 +1,6 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
+import Google from 'next-auth/providers/google'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 
@@ -33,6 +34,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: { signIn: '/login' },
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      allowDangerousEmailAccountLinking: true, // auto-link ke akun existing kalau email sama
+    }),
     Credentials({
       name: 'credentials',
       credentials: {
@@ -123,6 +129,33 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    async signIn({ user, account }: any) {
+      // Saat login Google: auto-create akun Z One jika belum ada, atau link ke yang sudah ada
+      if (account?.provider === 'google' && user?.email) {
+        try {
+          let dbUser = await prisma.user.findUnique({ where: { email: user.email } })
+          if (!dbUser) {
+            // Belum ada akun → daftarkan otomatis
+            const randomPw = await bcrypt.hash(Math.random().toString(36), 10)
+            dbUser = await prisma.user.create({
+              data: {
+                email: user.email,
+                name: user.name || user.email.split('@')[0],
+                password: randomPw,
+                role: 'USER',
+              },
+            })
+          }
+          // Sertakan id dan role ke user object supaya jwt callback bisa ambil
+          user.id = dbUser.id
+          user.role = dbUser.role
+        } catch (err) {
+          console.error('Google signIn error:', err)
+          return false
+        }
+      }
+      return true
+    },
     async jwt({ token, user }: any) {
       if (user) {
         token.id = user.id

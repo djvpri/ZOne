@@ -425,6 +425,26 @@ export default function LoginPage() {
           </form>
         )}
 
+        {/* Google Login/Register */}
+        <div className="mt-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 h-px bg-slate-800" />
+            <span className="text-xs text-slate-600">atau</span>
+            <div className="flex-1 h-px bg-slate-800" />
+          </div>
+          <button
+            onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+            className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 text-gray-800 font-semibold rounded-xl py-3.5 transition-all active:scale-[0.98] text-sm">
+            <svg width="18" height="18" viewBox="0 0 48 48">
+              <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.2l6.8-6.8C35.7 2.3 30.2 0 24 0 14.6 0 6.7 5.4 2.8 13.3l8 6.2C12.8 13.2 17.9 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.6h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 6.9-9.9 6.9-17.1z"/>
+              <path fill="#FBBC05" d="M10.8 28.5A14.4 14.4 0 0 1 9.5 24c0-1.6.3-3.1.8-4.5l-8-6.2A23.8 23.8 0 0 0 0 24c0 3.9.9 7.5 2.8 10.7l8-6.2z"/>
+              <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.2-7.7 2.2-6.1 0-11.2-3.7-13.2-9l-8 6.2C6.7 42.6 14.6 48 24 48z"/>
+            </svg>
+            {isLogin ? 'Login dengan Google' : 'Daftar dengan Google'}
+          </button>
+        </div>
+
         <p className="mt-6 text-center text-xs text-slate-600">
           v1.0 · Z One Platform
         </p>

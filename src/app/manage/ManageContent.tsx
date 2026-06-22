@@ -471,8 +471,10 @@ export default function ManageContent() {
                               }}
                               className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
                               <option value="">— Pilih akun Z One —</option>
-                              {zoneUsers.filter(u => !u.faceId).map(u => (
-                                <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                              {zoneUsers.map(u => (
+                                <option key={u.id} value={u.id}>
+                                  {u.name} ({u.email}){u.faceId ? ' ⚠️ sudah ada wajah' : ''}
+                                </option>
                               ))}
                             </select>
                           </div>

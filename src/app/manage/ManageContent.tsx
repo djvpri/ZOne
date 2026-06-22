@@ -480,9 +480,9 @@ export default function ManageContent() {
                               ))}
                             </select>
                             <button type="submit"
-                              disabled={faceLinkSaving === f.faceId}
+                              disabled={!!faceLinkSaving && faceLinkSaving === f.faceId}
                               className="text-[10px] px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg flex-shrink-0">
-                              {faceLinkSaving === f.faceId ? '…' : 'Tautkan'}
+                              {faceLinkSaving === f.faceId && faceLinkSaving ? '…' : 'Tautkan'}
                             </button>
                           </form>
                         )}

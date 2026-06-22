@@ -45,11 +45,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const email = credentials.email as string
           const password = credentials.password as string
-          
+
+          // QR login: password format adalah "qr:{token}"
+          if (password.startsWith('qr:')) {
+            const token = password.slice(3)
+            const { prisma } = await import('@/lib/prisma')
+            const qr = await prisma.qrSession.findUnique({ where: { token } })
+            if (!qr || qr.status !== 'APPROVED' || qr.userEmail !== email) return null
+            const user = await prisma.user.findUnique({ where: { email } })
+            if (!user) return null
+            return { id: user.id, email: user.email, name: user.name, role: user.role }
+          }
+
           // Face login: password format is "face:PersonName"
           if (password.startsWith('face:')) {
             const faceName = password.slice(5)
-            
             const user = await prisma.user.findUnique({ where: { email } })
             if (!user) return null
             

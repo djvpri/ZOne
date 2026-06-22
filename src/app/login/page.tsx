@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 
-type LoginMode = 'password' | 'face'
+type LoginMode = 'password' | 'face' | 'qr'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -17,6 +17,13 @@ export default function LoginPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const [cameraActive, setCameraActive] = useState(false)
+
+  // QR Login state
+  const [qrId, setQrId] = useState('')
+  const [qrToken, setQrToken] = useState('')
+  const [qrExpiry, setQrExpiry] = useState<Date | null>(null)
+  const [qrStatus, setQrStatus] = useState<'idle' | 'pending' | 'scanned' | 'approved' | 'expired'>('idle')
+  const qrPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Login
   const [loginEmail, setLoginEmail] = useState('')
@@ -36,9 +43,53 @@ export default function LoginPage() {
     setCameraActive(false)
   }, [])
 
+  const stopQrPolling = useCallback(() => {
+    if (qrPollRef.current) { clearInterval(qrPollRef.current); qrPollRef.current = null }
+  }, [])
+
+  const generateQr = useCallback(async () => {
+    stopQrPolling()
+    setQrStatus('pending')
+    try {
+      const res = await fetch('/api/qr/generate', { method: 'POST' })
+      const d = await res.json()
+      setQrId(d.id); setQrToken(d.token); setQrExpiry(new Date(d.expiresAt))
+
+      // Poll tiap 2 detik
+      qrPollRef.current = setInterval(async () => {
+        const pr = await fetch(`/api/qr/poll?id=${d.id}`)
+        const pd = await pr.json()
+        if (pd.status === 'SCANNED') { setQrStatus('scanned') }
+        if (pd.status === 'APPROVED') {
+          stopQrPolling(); setQrStatus('approved')
+          // Buat sesi login NextAuth lewat credentials khusus
+          await signIn('credentials', {
+            email: pd.user.email,
+            password: `qr:${d.token}`,
+            redirect: false,
+          })
+          router.push('/dashboard')
+        }
+        if (pd.status === 'EXPIRED' || pd.status === 'CANCELLED') {
+          stopQrPolling(); setQrStatus('expired')
+        }
+      }, 2000)
+
+      // Auto-expire di sisi client juga
+      setTimeout(() => {
+        if (qrPollRef.current) { stopQrPolling(); setQrStatus('expired') }
+      }, 62000)
+    } catch { setQrStatus('idle') }
+  }, [stopQrPolling, router])
+
   useEffect(() => {
-    return () => stopCamera()
-  }, [stopCamera])
+    if (loginMode === 'qr') generateQr()
+    else stopQrPolling()
+  }, [loginMode, generateQr, stopQrPolling])
+
+  useEffect(() => {
+    return () => { stopCamera(); stopQrPolling() }
+  }, [stopCamera, stopQrPolling])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -234,9 +285,13 @@ export default function LoginPage() {
                 className={`flex-1 py-2.5 text-xs font-medium rounded-md transition ${loginMode === 'face' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
                 📷 Wajah
               </button>
+              <button onClick={() => { setLoginMode('qr'); setError('') }}
+                className={`flex-1 py-2.5 text-xs font-medium rounded-md transition ${loginMode === 'qr' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
+                📱 QR
+              </button>
             </div>
 
-            {loginMode === 'password' ? (
+            {loginMode === 'password' && (
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
                   <label className="block text-xs text-slate-400 mb-2">Email</label>
@@ -255,7 +310,9 @@ export default function LoginPage() {
                   {loading ? 'Masuk...' : 'Masuk'}
                 </button>
               </form>
-            ) : (
+            )}
+
+            {loginMode === 'face' && (
               <div className="space-y-4">
                 <div className="relative aspect-video bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
                   <video ref={videoRef} autoPlay playsInline muted
@@ -279,6 +336,50 @@ export default function LoginPage() {
                   className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold rounded-xl py-3.5 transition-all active:scale-[0.98]">
                   {loading ? 'Memproses...' : '📷 Login dengan Wajah'}
                 </button>
+              </div>
+            )}
+
+            {loginMode === 'qr' && (
+              <div className="space-y-4">
+                <p className="text-xs text-slate-400 text-center">Scan QR ini dari HP yang sudah login di Z One</p>
+                <div className="bg-white rounded-2xl p-4 flex items-center justify-center aspect-square max-w-[220px] mx-auto">
+                  {qrStatus === 'pending' && qrToken ? (
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent('https://zone.zomet.my.id/qr-approve?token=' + qrToken)}`}
+                      alt="QR Login"
+                      className="w-full h-full"
+                    />
+                  ) : qrStatus === 'scanned' ? (
+                    <div className="text-center">
+                      <div className="text-4xl mb-2">📱</div>
+                      <p className="text-slate-600 text-sm font-medium">QR Di-scan!</p>
+                      <p className="text-slate-500 text-xs">Konfirmasi di HP...</p>
+                    </div>
+                  ) : qrStatus === 'approved' ? (
+                    <div className="text-center">
+                      <div className="text-4xl mb-2">✅</div>
+                      <p className="text-slate-600 text-sm font-medium">Masuk...</p>
+                    </div>
+                  ) : qrStatus === 'expired' ? (
+                    <div className="text-center">
+                      <div className="text-4xl mb-2">⏱️</div>
+                      <p className="text-slate-600 text-sm font-medium">QR Kedaluwarsa</p>
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 border-2 border-slate-300 border-t-transparent rounded-full animate-spin" />
+                  )}
+                </div>
+                {qrExpiry && qrStatus === 'pending' && (
+                  <p className="text-center text-xs text-slate-500">
+                    Berlaku hingga {qrExpiry.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  </p>
+                )}
+                {(qrStatus === 'expired' || qrStatus === 'idle') && (
+                  <button onClick={generateQr}
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl py-3.5 transition-all">
+                    🔄 Generate QR Baru
+                  </button>
+                )}
               </div>
             )}
           </>

@@ -113,7 +113,7 @@ export default function ManageContent() {
   }, [isAdmin, view, fetchZoneUsers, fetchFaceLinks, apps.length, fetchApps])
 
   const handleFaceLink = async (userId: string, faceId: string | null) => {
-    setFaceLinkSaving(userId)
+    setFaceLinkSaving(faceId || userId)
     try {
       const res = await fetch('/api/admin/face-link', {
         method: 'POST',
@@ -461,14 +461,16 @@ export default function ManageContent() {
                             </button>
                           </div>
                         ) : (
-                          <div className="flex gap-2">
+                          <form className="flex gap-2" onSubmit={async e => {
+                            e.preventDefault()
+                            const sel = (e.currentTarget.elements.namedItem('userId') as HTMLSelectElement)
+                            if (!sel.value) return
+                            await handleFaceLink(sel.value, f.faceId)
+                            sel.value = ''
+                          }}>
                             <select
+                              name="userId"
                               defaultValue=""
-                              onChange={async e => {
-                                if (!e.target.value) return
-                                await handleFaceLink(e.target.value, f.faceId)
-                                e.target.value = ''
-                              }}
                               className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
                               <option value="">— Pilih akun Z One —</option>
                               {zoneUsers.map(u => (
@@ -477,7 +479,12 @@ export default function ManageContent() {
                                 </option>
                               ))}
                             </select>
-                          </div>
+                            <button type="submit"
+                              disabled={faceLinkSaving === f.faceId}
+                              className="text-[10px] px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg flex-shrink-0">
+                              {faceLinkSaving === f.faceId ? '…' : 'Tautkan'}
+                            </button>
+                          </form>
                         )}
                       </div>
                     )

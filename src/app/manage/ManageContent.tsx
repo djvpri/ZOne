@@ -19,6 +19,12 @@ const PLANS = ['starter', 'pro', 'enterprise']
 interface ZoneUser {
   id: string; name: string; email: string; role: string
   appLinks: { appId: string; active: boolean }[]
+  faceId?: string | null
+}
+
+interface FaceEntry {
+  faceId: string; name: string; faces?: number
+  linked_email?: string | null; linked_to_zone: boolean
 }
 
 export default function ManageContent() {
@@ -28,6 +34,9 @@ export default function ManageContent() {
   const [zoneUsers, setZoneUsers] = useState<ZoneUser[]>([])
   const [zoneUsersLoading, setZoneUsersLoading] = useState(false)
   const [accessSaving, setAccessSaving] = useState<string>('')
+  const [faces, setFaces] = useState<FaceEntry[]>([])
+  const [facesLoading, setFacesLoading] = useState(false)
+  const [faceLinkSaving, setFaceLinkSaving] = useState('')
   const [apps, setApps] = useState<AppRow[]>([])
   const [appsLoading, setAppsLoading] = useState(true)
   const [activeApp, setActiveApp] = useState('')
@@ -51,6 +60,22 @@ export default function ManageContent() {
     if (status === 'unauthenticated') router.push('/login')
     if (status === 'authenticated' && !isAdmin) router.push('/dashboard')
   }, [status, session, router])
+
+  const fetchFaceLinks = useCallback(async () => {
+    setFacesLoading(true)
+    try {
+      const res = await fetch('/api/admin/face-link')
+      const data = await res.json()
+      if (res.ok) {
+        setFaces(data.faces || [])
+        setZoneUsers(prev => prev.map(u => {
+          const linked = (data.zone_users || []).find((zu: any) => zu.id === u.id)
+          return linked ? { ...u, faceId: linked.faceId } : u
+        }))
+      }
+    } catch { setError('Gagal memuat data wajah ZFace') }
+    finally { setFacesLoading(false) }
+  }, [])
 
   const fetchZoneUsers = useCallback(async () => {
     setZoneUsersLoading(true)
@@ -80,8 +105,28 @@ export default function ManageContent() {
   }, [isAdmin, fetchApps])
 
   useEffect(() => {
-    if (isAdmin && view === 'access') { fetchZoneUsers(); if (apps.length === 0) fetchApps() }
-  }, [isAdmin, view, fetchZoneUsers, apps.length, fetchApps])
+    if (isAdmin && view === 'access') {
+      fetchZoneUsers()
+      fetchFaceLinks()
+      if (apps.length === 0) fetchApps()
+    }
+  }, [isAdmin, view, fetchZoneUsers, fetchFaceLinks, apps.length, fetchApps])
+
+  const handleFaceLink = async (userId: string, faceId: string | null) => {
+    setFaceLinkSaving(userId)
+    try {
+      const res = await fetch('/api/admin/face-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, faceId }),
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error || 'Gagal')
+      flash(faceId ? 'Wajah ditautkan ke akun Z One ✓' : 'Tautan wajah dilepas')
+      fetchFaceLinks()
+    } catch (err: any) { setError(err.message) }
+    finally { setFaceLinkSaving('') }
+  }
 
   const flash = (msg: string) => { setSuccess(msg); setTimeout(() => setSuccess(''), 3000) }
 
@@ -378,6 +423,66 @@ export default function ManageContent() {
                 ))}
               </div>
             )}
+
+            {/* Section: Tautan Wajah ZFace ke Akun Z One */}
+            <div className="mt-6 pt-4 border-t border-slate-700/50">
+              <h4 className="text-xs font-bold text-slate-400 uppercase mb-2">🔗 Tautan Wajah ZFace → Akun Z One</h4>
+              <p className="text-[11px] text-slate-500 mb-4">
+                Tautkan wajah yang terdaftar di ZFace ke akun Z One, supaya login wajah bisa berfungsi di semua app ekosistem.
+              </p>
+              {facesLoading ? (
+                <div className="text-center py-6"><div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" /></div>
+              ) : faces.length === 0 ? (
+                <div className="text-center text-slate-500 text-sm py-6">Belum ada wajah di ZFace</div>
+              ) : (
+                <div className="space-y-2">
+                  {faces.map(f => {
+                    const linkedUser = zoneUsers.find(u => u.faceId === f.faceId)
+                    return (
+                      <div key={f.faceId} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <span className="text-white text-sm font-medium">{f.name}</span>
+                            {f.faces && <span className="text-[10px] text-slate-500 ml-2">{f.faces} foto</span>}
+                            {f.linked_email && <div className="text-[11px] text-blue-400/80">🏢 {f.linked_email}</div>}
+                          </div>
+                          {f.linked_to_zone && linkedUser ? (
+                            <span className="text-[10px] text-green-400">🔑 {linkedUser.name}</span>
+                          ) : null}
+                        </div>
+                        {linkedUser ? (
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[11px] text-green-400">✓ Tertaut ke {linkedUser.email}</span>
+                            <button
+                              disabled={faceLinkSaving === linkedUser.id}
+                              onClick={() => handleFaceLink(linkedUser.id, null)}
+                              className="text-[10px] px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg">
+                              {faceLinkSaving === linkedUser.id ? '…' : 'Lepas'}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <select
+                              defaultValue=""
+                              onChange={async e => {
+                                if (!e.target.value) return
+                                await handleFaceLink(e.target.value, f.faceId)
+                                e.target.value = ''
+                              }}
+                              className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                              <option value="">— Pilih akun Z One —</option>
+                              {zoneUsers.filter(u => !u.faceId).map(u => (
+                                <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         ) : (
         <>

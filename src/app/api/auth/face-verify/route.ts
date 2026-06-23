@@ -65,6 +65,15 @@ export async function POST(req: Request) {
     // Primary: match by faceId (permanent solution)
     user = await prisma.user.findUnique({ where: { faceId } })
 
+    // Debug log — akan kelihatan di Railway deploy logs
+    const allUsersWithFaceId = await prisma.user.findMany({
+      where: { faceId: { not: null } },
+      select: { id: true, name: true, email: true, faceId: true }
+    })
+    console.log(`[FaceVerify] token faceId: ${faceId}`)
+    console.log(`[FaceVerify] users with faceId:`, JSON.stringify(allUsersWithFaceId))
+    console.log(`[FaceVerify] matched user: ${user ? user.email : 'none'}`)
+
     // Fallback: if email provided, try email match
     if (!user && email) {
       user = await prisma.user.findUnique({ where: { email } })

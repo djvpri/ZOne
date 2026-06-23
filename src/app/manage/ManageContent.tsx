@@ -696,11 +696,12 @@ export default function ManageContent() {
                 </select>
               )}
               <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => setShowAddUser(false)} className="flex-1 bg-slate-800 text-slate-300 text-sm font-semibold py-2.5 rounded-xl">Batal</button>
+                <button type="button" onClick={() => { setShowAddUser(false); setError('') }} className="flex-1 bg-slate-800 text-slate-300 text-sm font-semibold py-2.5 rounded-xl">Batal</button>
                 <button type="submit" disabled={userLoading} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold py-2.5 rounded-xl disabled:opacity-50">
                   {userLoading ? '...' : 'Simpan'}
                 </button>
               </div>
+              {error && <p className="text-red-400 text-xs mt-2 text-center">{error}</p>}
             </form>
           </div>
         </div>

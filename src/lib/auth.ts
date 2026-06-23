@@ -142,6 +142,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    async redirect({ url, baseUrl }: any) {
+      // Izinkan redirect ke semua domain ekosistem zomet.my.id (untuk SSO antar app)
+      if (url.startsWith('/')) return `${baseUrl}${url}`
+      if (url.startsWith(baseUrl)) return url
+      try {
+        if (new URL(url).hostname.endsWith('.zomet.my.id')) return url
+      } catch {}
+      return baseUrl + '/dashboard'
+    },
     async signIn({ user, account }: any) {
       // Saat login Google: auto-create akun Z One jika belum ada, atau link ke yang sudah ada
       if (account?.provider === 'google' && user?.email) {

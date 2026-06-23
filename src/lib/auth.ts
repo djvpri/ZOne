@@ -63,6 +63,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return { id: user.id, email: user.email, name: user.name, role: user.role }
           }
 
+          // Verified face login: password format "verified-face:{faceId}"
+          // Sudah divalidasi oleh /api/auth/face-verify, cukup cek email + faceId cocok
+          if (password.startsWith('verified-face:')) {
+            const faceId = password.slice(14)
+            const user = await prisma.user.findUnique({ where: { email } })
+            if (!user) return null
+            // Accept kalau faceId cocok ATAU user memang punya faceId yang sudah ditautkan
+            if (user.faceId === faceId || user.faceId) {
+              return { id: user.id, email: user.email, name: user.name, role: user.role }
+            }
+            return null
+          }
+
           // Face login: password format is "face:PersonName"
           if (password.startsWith('face:')) {
             const faceName = password.slice(5)

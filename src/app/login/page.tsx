@@ -192,10 +192,10 @@ export default function LoginPage() {
 
       const verifyData = await verifyRes.json()
 
-      // Use signIn from next-auth/react
+      // Login pakai token verified yang sudah divalidasi face-verify (bukan fuzzy name lagi)
       const signInRes = await signIn('credentials', {
         email: verifyData.email,
-        password: `face:${verifyData.personName || verifyData.name}`,
+        password: `verified-face:${verifyData.faceId}`,
         redirect: false,
       })
 

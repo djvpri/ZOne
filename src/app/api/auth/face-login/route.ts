@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     if (error.name === 'TimeoutError') {
       return NextResponse.json({ error: 'Face detection timeout' }, { status: 504 })
     }
-    console.error('Proxy error:', error)
-    return NextResponse.json({ error: 'Proxy error' }, { status: 500 })
+    console.error('Proxy error:', error?.message || error)
+    return NextResponse.json({ error: `Proxy error: ${error?.message || 'unknown'}` }, { status: 500 })
   }
 }

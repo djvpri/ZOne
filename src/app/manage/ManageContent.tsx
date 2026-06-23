@@ -11,7 +11,7 @@ interface AppUser {
 }
 
 interface AppRow {
-  id: string; slug: string; name: string; icon?: string | null; url: string; isActive: boolean
+  id: string; slug: string; name: string; icon?: string | null; url: string; isActive: boolean; category?: string
 }
 
 const APP_ROLES: Record<string, string[]> = {
@@ -572,6 +572,35 @@ export default function ManageContent() {
             >
               ✏️ Edit URL
             </button>
+            <span className="text-slate-700">·</span>
+            <select
+              value={apps.find(a => a.slug === activeApp)?.category || 'general'}
+              onChange={async e => {
+                const app = apps.find(a => a.slug === activeApp)
+                if (!app) return
+                try {
+                  const res = await fetch('/api/admin/apps', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: app.id, category: e.target.value }),
+                  })
+                  if (!res.ok) throw new Error((await res.json()).error || 'Gagal update')
+                  flash('Kategori diperbarui')
+                  fetchApps()
+                } catch (err: any) { setError(err.message) }
+              }}
+              className="text-[10px] bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-300"
+            >
+              <option value="general">📦 General</option>
+              <option value="pos">🏪 Point of Sale</option>
+              <option value="hr">👥 Human Resources</option>
+              <option value="booking">📅 Booking & Reservasi</option>
+              <option value="finance">💰 Keuangan & Investasi</option>
+              <option value="identity">🔐 Identitas & Keamanan</option>
+              <option value="analytics">📊 Analytics & BI</option>
+              <option value="health">🏥 Kesehatan</option>
+              <option value="platform">🚀 Platform</option>
+            </select>
           </div>
         )}
 

@@ -250,6 +250,7 @@ export default function ManageContent() {
         linked_email: u.linked_email,
         tenantId: u.tenantId != null ? String(u.tenantId) : (u.tenant_id != null ? String(u.tenant_id) : null),
         active: u.active ?? u.aktif ?? u.isActive,
+        role: u.role ?? u.jabatan ?? undefined,
       }))
       setUsers(normUsers)
       setTenants(normTenants)

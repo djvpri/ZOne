@@ -7,11 +7,20 @@ interface Tenant {
   id: string; name: string; plan?: string; active?: boolean; expires_at?: string | null; quota?: number
 }
 interface AppUser {
-  id?: string; name: string; email?: string; faces?: number; linked_email?: string | null; tenantId?: string | null; active?: boolean
+  id?: string; name: string; email?: string; faces?: number; linked_email?: string | null; tenantId?: string | null; active?: boolean; role?: string
 }
 
 interface AppRow {
   id: string; slug: string; name: string; icon?: string | null; url: string; isActive: boolean
+}
+
+const APP_ROLES: Record<string, string[]> = {
+  zpos:    ['kasir', 'owner', 'admin'],
+  zresto:  ['CASHIER', 'OWNER', 'MANAGER', 'ADMIN'],
+  zgold:   ['kasir', 'owner', 'admin'],
+  zbengkel:['kasir', 'owner', 'admin'],
+  zlaundry:['kasir', 'owner', 'admin'],
+  zrooms:  ['USER', 'ADMIN', 'MANAGER'],
 }
 
 const PLANS = ['starter', 'pro', 'enterprise']
@@ -310,6 +319,15 @@ export default function ManageContent() {
       flash(`Tenant "${name}" diaktifkan kembali`)
       fetchData(activeApp)
     } catch (err: any) { setError(`Gagal aktifkan ulang: ${err.message}`) }
+  }
+
+  const handleUpdateRole = async (email: string | undefined, name: string, newRole: string) => {
+    if (!email) return
+    try {
+      await call('updateRole', { email, role: newRole }, email)
+      flash(`Role "${name}" diubah ke ${newRole}`)
+      fetchData(activeApp)
+    } catch (err: any) { setError(`Gagal ubah role: ${err.message}`) }
   }
 
   const handleMoveUser = async (userId: string | undefined, email: string | undefined, name: string, newTenantId: string) => {
@@ -678,6 +696,23 @@ export default function ManageContent() {
                         )}
                       </div>
                     </div>
+                    {/* Ubah role */}
+                    {APP_ROLES[activeApp]?.length > 0 && u.active !== false && u.email && (
+                      <div className="flex gap-2 mt-2">
+                        <select
+                          value={u.role || ''}
+                          onChange={async e => {
+                            if (!e.target.value || e.target.value === u.role) return
+                            await handleUpdateRole(u.email, u.name, e.target.value)
+                          }}
+                          className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-[10px] text-slate-300">
+                          <option value="">— Ubah role —</option>
+                          {(APP_ROLES[activeApp] || []).map(r => (
+                            <option key={r} value={r}>{r}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     {/* Pindah tenant */}
                     {tenants.length > 1 && u.active !== false && (
                       <div className="flex gap-2 mt-2">

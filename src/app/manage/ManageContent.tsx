@@ -673,6 +673,7 @@ export default function ManageContent() {
                         <div className="text-white text-sm font-medium truncate flex items-center gap-1.5">
                           {u.name}
                           {u.active === false && <span className="text-[9px] px-1.5 py-0.5 bg-slate-700 text-slate-400 rounded-full flex-shrink-0">nonaktif</span>}
+                          {u.role && <span className="text-[9px] px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded-full flex-shrink-0">{u.role}</span>}
                         </div>
                         <div className="text-[11px] text-slate-500 truncate">{u.email || (u.linked_email ? `🔑 ${u.linked_email}` : 'belum ada email')}</div>
                         <div className="text-[10px] text-blue-400/80 truncate">

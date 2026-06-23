@@ -35,10 +35,11 @@ export async function GET() {
     return NextResponse.json({
       faces: (zfaceData.users || []).map((f: any) => ({
         faceId: String(f.id || f.face_id || f.faceId || ''),
+        allIds: (f.all_ids || [f.id || f.face_id || f.faceId]).map(String),
         name: f.name || f.nama || '',
         faces: f.faces,
         linked_email: f.linked_email || null,
-        linked_to_zone: linkedFaceIds.has(String(f.id || f.face_id || f.faceId || '')),
+        linked_to_zone: (f.all_ids || [String(f.id)]).some((id: string) => linkedFaceIds.has(String(id))),
       })),
       zone_users: zoneUsers,
     })

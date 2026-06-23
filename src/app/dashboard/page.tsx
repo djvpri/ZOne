@@ -178,7 +178,7 @@ export default function DashboardPage() {
                   const href = ssoEnabled ? `/api/sso/${ua.app.slug}` : (ua.app.url !== '#' ? ua.app.url : '#')
                   return (
                   <a key={ua.app.id} href={href}
-                    target={ua.app.url !== '#' ? '_blank' : undefined}
+                    target={ssoEnabled ? '_self' : (ua.app.url !== '#' ? '_blank' : undefined)}
                     rel="noopener noreferrer"
                     className={`group block bg-slate-900 border border-slate-800 rounded-xl p-4 transition-all active:scale-[0.98] ${ua.app.url !== '#' ? 'hover:border-slate-600 hover:bg-slate-800/50' : 'opacity-50 cursor-not-allowed'}`}>
                     <div className="flex items-center gap-3">

@@ -284,7 +284,7 @@ export default function ManageContent() {
       const name = newTenantName.trim()
       const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
       // Kirim semua field yang mungkin dibutuhkan berbagai app
-      await call('createTenant', { name, namaToko: name, slug, plan: 'starter' })
+      await call('createTenant', { name, namaToko: name, slug, plan: 'free' })
       flash(`Tenant "${newTenantName}" dibuat`)
       setNewTenantName('')
       fetchData(activeApp)

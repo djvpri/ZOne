@@ -11,7 +11,7 @@ type App = {
 
 type UserApp = { app: App; active: boolean }
 
-const SSO_ENABLED_SLUGS = new Set(['zface', 'zpos', 'zresto', 'zlaundry', 'zgold', 'zbengkel', 'zmedics'])
+const SSO_ENABLED_SLUGS = new Set(['zface', 'zpos', 'zresto', 'zlaundry', 'zgold', 'zbengkel', 'zmedics', 'zabsen'])
 
 const CATEGORY_LABELS: Record<string, { label: string; icon: string }> = {
   pos: { label: 'Point of Sale', icon: '🏪' },

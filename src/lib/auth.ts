@@ -37,7 +37,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-      allowDangerousEmailAccountLinking: true, // auto-link ke akun existing kalau email sama
+      allowDangerousEmailAccountLinking: true,
+      checks: ['state'], // disable PKCE - fix cookie issue di Railway
     }),
     Credentials({
       name: 'credentials',

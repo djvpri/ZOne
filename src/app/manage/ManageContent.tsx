@@ -281,7 +281,10 @@ export default function ManageContent() {
     e.preventDefault()
     if (!newTenantName.trim()) return
     try {
-      await call('createTenant', { name: newTenantName.trim() })
+      const name = newTenantName.trim()
+      const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+      // Kirim semua field yang mungkin dibutuhkan berbagai app
+      await call('createTenant', { name, namaToko: name, slug, plan: 'starter' })
       flash(`Tenant "${newTenantName}" dibuat`)
       setNewTenantName('')
       fetchData(activeApp)

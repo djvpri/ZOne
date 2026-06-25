@@ -40,3 +40,14 @@ async function fixRole() {
   } catch(e) { console.warn('Role fix warn:', e.message?.slice(0,100)) }
   finally { await p.$disconnect() }
 }
+
+// Normalisasi role lowercase ke ADMIN
+async function normalizeRoles() {
+  const p2 = new PrismaClient()
+  try {
+    await p2.$executeRawUnsafe(`UPDATE "User" SET role = 'ADMIN' WHERE role IN ('admin', 'staff')`)
+    console.log('Roles normalized ✓')
+  } catch(e) { console.warn('normalize warn:', e.message?.slice(0,80)) }
+  finally { await p2.$disconnect() }
+}
+normalizeRoles()

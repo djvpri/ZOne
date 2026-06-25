@@ -180,7 +180,7 @@ export default function DashboardPage() {
             <a href="/profile" className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors text-lg" title="Profil">
               👤
             </a>
-            {['ADMIN','admin'].includes(user.role) && (
+            {user.role === 'ADMIN' && (
               <a href="/manage" className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors text-lg" title="Admin">
                 ⚙️
               </a>
@@ -300,7 +300,7 @@ export default function DashboardPage() {
             <span className="text-xl">👤</span>
             <span className="text-[10px] font-medium">Profil</span>
           </a>
-          {['ADMIN','admin'].includes(user.role) && (
+          {user.role === 'ADMIN' && (
             <a href="/manage" className="flex flex-col items-center gap-1 px-4 py-1 text-slate-400">
               <span className="text-xl">⚙️</span>
               <span className="text-[10px] font-medium">Admin</span>

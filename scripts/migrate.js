@@ -26,3 +26,17 @@ async function migrate() {
 }
 
 migrate().catch(e => { console.error('Migration error:', e.message); process.exit(0) }).finally(() => p.$disconnect())
+
+// Fix enum Role
+async function fixRole() {
+  const p = new PrismaClient()
+  try {
+    // Cek tipe kolom role saat ini
+    await p.$executeRawUnsafe(`ALTER TABLE "User" ALTER COLUMN role DROP DEFAULT`)
+    await p.$executeRawUnsafe(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname='Role') THEN CREATE TYPE "Role" AS ENUM ('USER','ADMIN','staff'); END IF; END $$`)
+    await p.$executeRawUnsafe(`ALTER TABLE "User" ALTER COLUMN role TYPE "Role" USING role::"Role"`)
+    await p.$executeRawUnsafe(`ALTER TABLE "User" ALTER COLUMN role SET DEFAULT 'USER'::"Role"`)
+    console.log('Role enum fixed ✓')
+  } catch(e) { console.warn('Role fix warn:', e.message?.slice(0,100)) }
+  finally { await p.$disconnect() }
+}

@@ -51,7 +51,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Not a face login token' }, { status: 400 })
     }
 
-    const faceId = payload.sub  // face_id from ZFace
+    const faceId = payload.sub  // face_id from ZFace (UUID row yang match saat scan)
     const personName = payload.person_name
     const similarity = payload.similarity
 
@@ -59,11 +59,48 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No face ID in token' }, { status: 400 })
     }
 
-    // 2. Find user in ZOne database by faceId (exact match!)
+    // 2. Find user in ZOne database by faceId
+    // Karena ZFace group wajah by nama dan bisa ada banyak foto per orang,
+    // UUID yang di-scan bisa beda dengan UUID yang tersimpan di User.faceId.
+    // Solusi: ambil semua UUID dari grup nama yang sama di ZFace, lalu cek salah satunya cocok.
     let user = null
 
-    // Primary: match by faceId (permanent solution)
-    user = await prisma.user.findUnique({ where: { faceId } })
+    // Primary: exact match dulu
+    user = await prisma.user.findFirst({ where: { faceId } })
+
+    // Fallback: cari UUID lain dari grup nama yang sama via ZFace cross-app
+    if (!user && personName) {
+      try {
+        const ZFACE_URL = 'https://zface.zomet.my.id'
+        const CROSS_SECRET = process.env.CROSS_APP_SECRET || 'z-ecosystem-admin-2026'
+        const zfaceRes = await fetch(`${ZFACE_URL}/api/admin/cross-app`, {
+          headers: { Authorization: `Bearer ${CROSS_SECRET}` },
+          signal: AbortSignal.timeout(8000),
+        })
+        if (zfaceRes.ok) {
+          const zfaceData = await zfaceRes.json()
+          const group = (zfaceData.users || []).find(
+            (u: any) => (u.name || '').toLowerCase() === personName.toLowerCase()
+          )
+          if (group?.all_ids?.length) {
+            // Cari user Z One yang faceId-nya cocok dengan salah satu UUID dari grup ini
+            user = await prisma.user.findFirst({
+              where: { faceId: { in: group.all_ids } }
+            })
+            // Kalau ketemu, update faceId ke UUID yang baru dipakai saat scan
+            if (user && user.faceId !== faceId) {
+              await prisma.user.update({ where: { id: user.id }, data: { faceId } })
+              console.log(`[FaceVerify] Updated faceId for ${user.email}: ${user.faceId} -> ${faceId}`)
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[FaceVerify] Fallback ZFace lookup error:', e)
+      }
+    }
+
+    // Debug log
+    console.log(`[FaceVerify] token faceId: ${faceId}, personName: ${personName}, matched: ${user?.email || 'none'}`)
 
     // Fallback: if email provided, try email match
     if (!user && email) {

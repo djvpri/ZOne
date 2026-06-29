@@ -5,12 +5,6 @@ import jwt from 'jsonwebtoken'
 
 const CROSS_APP_SECRET = process.env.CROSS_APP_SECRET || 'z-ecosystem-admin-2026'
 
-// Daftar app yang sudah punya endpoint /sso (terima token dari Z One).
-// Tambahkan slug app lain di sini begitu app tsb juga implement /sso di sisinya.
-const SSO_ENABLED: Record<string, string> = {
-  zface: 'https://zface.zomet.my.id',
-}
-
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const session = await auth()
@@ -18,9 +12,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  const baseUrl = SSO_ENABLED[slug]
-  if (!baseUrl) {
-    return NextResponse.json({ error: `App "${slug}" belum mendukung SSO` }, { status: 400 })
+  // Ambil URL app dari database (data-driven, tidak hardcode lagi)
+  const app = await prisma.app.findUnique({ where: { slug } })
+  if (!app || !app.url || app.url === '#') {
+    return NextResponse.json({ error: `App "${slug}" tidak ditemukan atau belum punya URL` }, { status: 400 })
   }
 
   const user = await prisma.user.findUnique({
@@ -31,19 +26,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     return NextResponse.redirect(new URL('/dashboard?sso_error=user_not_found', req.url))
   }
 
-  // Cek hak akses: user harus punya UserApp aktif untuk app ini.
+  // Cek hak akses: user harus punya UserApp aktif untuk app ini
   const link = user.appLinks.find((ua: { app: { slug: string }; active: boolean }) => ua.app.slug === slug)
   if (!link || !link.active) {
     return NextResponse.redirect(new URL(`/dashboard?sso_error=no_access&app=${slug}`, req.url))
   }
 
+  const baseUrl = app.url.trim().replace(/\/+$/, '').toLowerCase()
   const token = jwt.sign(
-    {
-      sub: user.id,
-      email: user.email,
-      name: user.name,
-      app: slug,
-    },
+    { sub: user.id, email: user.email, name: user.name, app: slug },
     CROSS_APP_SECRET,
     { algorithm: 'HS256', expiresIn: '60s' }
   )

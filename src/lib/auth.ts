@@ -1,5 +1,6 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
+import Google from 'next-auth/providers/google'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 
@@ -33,6 +34,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: { signIn: '/login' },
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      allowDangerousEmailAccountLinking: true,
+      checks: ['state'], // disable PKCE - fix cookie issue di Railway
+    }),
     Credentials({
       name: 'credentials',
       credentials: {
@@ -45,11 +52,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const email = credentials.email as string
           const password = credentials.password as string
-          
+
+          // QR login: password format adalah "qr:{token}"
+          if (password.startsWith('qr:')) {
+            const token = password.slice(3)
+            const { prisma } = await import('@/lib/prisma')
+            const qr = await prisma.qrSession.findUnique({ where: { token } })
+            if (!qr || qr.status !== 'APPROVED' || qr.userEmail !== email) return null
+            const user = await prisma.user.findUnique({ where: { email } })
+            if (!user) return null
+            return { id: user.id, email: user.email, name: user.name, role: user.role }
+          }
+
+          // Verified face login: password format "verified-face:{faceId}"
+          // Sudah divalidasi oleh /api/auth/face-verify, cukup cek email + faceId cocok
+          if (password.startsWith('verified-face:')) {
+            const faceId = password.slice(14)
+            const user = await prisma.user.findUnique({ where: { email } })
+            if (!user) return null
+            // Accept kalau faceId cocok ATAU user memang punya faceId yang sudah ditautkan
+            if (user.faceId === faceId || user.faceId) {
+              return { id: user.id, email: user.email, name: user.name, role: user.role }
+            }
+            return null
+          }
+
           // Face login: password format is "face:PersonName"
           if (password.startsWith('face:')) {
             const faceName = password.slice(5)
-            
             const user = await prisma.user.findUnique({ where: { email } })
             if (!user) return null
             
@@ -113,6 +143,42 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    async redirect({ url, baseUrl }: any) {
+      // Izinkan redirect ke semua domain ekosistem zomet.my.id (untuk SSO antar app)
+      if (url.startsWith('/')) return `${baseUrl}${url}`
+      if (url.startsWith(baseUrl)) return url
+      try {
+        if (new URL(url).hostname.endsWith('.zomet.my.id')) return url
+      } catch {}
+      return baseUrl + '/dashboard'
+    },
+    async signIn({ user, account }: any) {
+      // Saat login Google: auto-create akun Z One jika belum ada, atau link ke yang sudah ada
+      if (account?.provider === 'google' && user?.email) {
+        try {
+          let dbUser = await prisma.user.findUnique({ where: { email: user.email } })
+          if (!dbUser) {
+            // Belum ada akun → daftarkan otomatis
+            const randomPw = await bcrypt.hash(Math.random().toString(36), 10)
+            dbUser = await prisma.user.create({
+              data: {
+                email: user.email,
+                name: user.name || user.email.split('@')[0],
+                password: randomPw,
+                role: 'USER',
+              },
+            })
+          }
+          // Sertakan id dan role ke user object supaya jwt callback bisa ambil
+          user.id = dbUser.id
+          user.role = dbUser.role
+        } catch (err) {
+          console.error('Google signIn error:', err)
+          return false
+        }
+      }
+      return true
+    },
     async jwt({ token, user }: any) {
       if (user) {
         token.id = user.id

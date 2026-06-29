@@ -69,6 +69,29 @@ model Activity {
   @@index([createdAt])
 }
 
+model QrSession {
+  id          String    @id @default(cuid())
+  token       String    @unique @default(cuid()) // token di dalam QR code
+  status      QrStatus  @default(PENDING)
+  userId      String?   // diisi saat HP approve
+  userEmail   String?   // diisi saat HP approve
+  userName    String?   // diisi saat HP approve
+  userRole    String?   // diisi saat HP approve
+  expiresAt   DateTime  // QR berlaku 60 detik
+  approvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  @@index([token])
+  @@index([expiresAt])
+}
+
+enum QrStatus {
+  PENDING   // QR ditampilkan, belum di-scan
+  SCANNED   // HP sudah scan, menunggu konfirmasi user
+  APPROVED  // User tap "Izinkan" di HP
+  EXPIRED   // QR kedaluwarsa
+  CANCELLED // User tap "Tolak" di HP
+}
+
 enum Role {
   USER
   ADMIN

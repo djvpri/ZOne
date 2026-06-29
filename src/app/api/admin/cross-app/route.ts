@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import bcrypt from 'bcryptjs'
+import { randomBytes } from 'crypto'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
@@ -10,6 +12,27 @@ const CROSS_APP_SECRET = process.env.CROSS_APP_SECRET || 'z-ecosystem-admin-2026
 
 async function getApp(slug: string) {
   return prisma.app.findUnique({ where: { slug: slug.toLowerCase() } })
+}
+
+// Sinkron spoke -> hub: pastikan user spoke punya akun hub Z One + link aktif ke
+// app-nya, supaya muncul & bisa dikelola di tab "Akses User". Akun hub yang sudah
+// ada TIDAK ditimpa (update kosong). Kalau password diketahui (mis. saat admin
+// bikin user dari kelola-per-app) dipakai supaya bisa login hub dgn kredensial sama;
+// kalau tidak, dipasang password acak (user reset/SSO/face untuk login hub).
+async function linkSpokeUserToHub(appId: string, u: { name?: string; email: string; password?: string }) {
+  const email = (u.email || '').trim()
+  if (!email) return
+  const password = await bcrypt.hash(u.password || randomBytes(12).toString('hex'), 10)
+  const hubUser = await prisma.user.upsert({
+    where: { email },
+    update: {},
+    create: { name: u.name || email, email, password, role: 'USER' },
+  })
+  await prisma.userApp.upsert({
+    where: { userId_appId: { userId: hubUser.id, appId } },
+    update: { active: true },
+    create: { userId: hubUser.id, appId, active: true },
+  })
 }
 
 export async function GET(req: NextRequest) {
@@ -64,6 +87,17 @@ export async function POST(req: NextRequest) {
     })
 
     const result = await response.json()
+
+    // Begitu user dibuat di spoke, buat juga akun hub + link app (best-effort,
+    // jangan gagalkan response spoke kalau sinkron hub error).
+    if (action === 'create' && response.ok && !result?.error && data?.email) {
+      try {
+        await linkSpokeUserToHub(app.id, { name: data.name, email: data.email, password: data.password })
+      } catch (e) {
+        console.error('Sinkron user spoke -> hub gagal:', e)
+      }
+    }
+
     return NextResponse.json(result, { status: response.status })
   } catch (error) {
     console.error('Cross-app proxy action error:', error)

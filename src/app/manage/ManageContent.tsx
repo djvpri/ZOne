@@ -7,7 +7,7 @@ interface Tenant {
   id: string; name: string; plan?: string; active?: boolean; expires_at?: string | null; quota?: number
 }
 interface AppUser {
-  id?: string; name: string; email?: string; faces?: number; linked_email?: string | null; tenantId?: string | null; active?: boolean
+  id?: string; name: string; email?: string; faces?: number; linked_email?: string | null; tenantId?: string | null; active?: boolean; role?: string
 }
 
 interface AppRow {
@@ -196,6 +196,7 @@ export default function ManageContent() {
         linked_email: u.linked_email,
         tenantId: u.tenantId != null ? String(u.tenantId) : (u.tenant_id != null ? String(u.tenant_id) : null),
         active: u.active ?? u.aktif ?? u.isActive,
+        role: u.role,
       }))
       setUsers(normUsers)
       setTenants(normTenants)
@@ -284,6 +285,15 @@ export default function ManageContent() {
       flash(`User "${name}" diaktifkan kembali`)
       fetchData(activeApp)
     } catch (err: any) { setError(`Gagal aktifkan ulang: ${err.message}`) }
+  }
+
+  const handleUpdateRole = async (email: string | undefined, name: string, newRole: string) => {
+    if (!email) return
+    try {
+      await call('updateRole', { role: newRole }, email)
+      flash(`Role "${name}" diubah ke ${newRole}`)
+      fetchData(activeApp)
+    } catch (err: any) { setError(`Gagal ubah role: ${err.message}`) }
   }
 
   const handleAddUser = async (e: React.FormEvent) => {
@@ -539,6 +549,13 @@ export default function ManageContent() {
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {typeof u.faces === 'number' && <span className="text-[10px] text-slate-500">{u.faces} foto</span>}
+                      {u.role && (
+                        <select value={u.role} onChange={(e) => handleUpdateRole(u.email, u.name, e.target.value)}
+                          className="text-[10px] px-2 py-1 bg-slate-800 text-slate-300 border border-slate-600 rounded-lg cursor-pointer hover:border-slate-500">
+                          <option value="kasir">Kasir</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                      )}
                       {u.email && (
                         u.active === false ? (
                           <button onClick={() => handleReactivateUser(u.email, u.name)}

@@ -287,6 +287,15 @@ export default function ManageContent() {
     } catch (err: any) { setError(`Gagal aktifkan ulang: ${err.message}`) }
   }
 
+  const handleMoveUser = async (userId: string | undefined, email: string | undefined, name: string, newTenantId: string) => {
+    if (!userId && !email) return
+    try {
+      await call('moveTenant', { userId, tenantId: newTenantId }, email)
+      flash(`User "${name}" dipindah ke tenant baru`)
+      fetchData(activeApp)
+    } catch (err: any) { setError(`Gagal pindah tenant: ${err.message}`) }
+  }
+
   const handleUpdateRole = async (email: string | undefined, name: string, newRole: string) => {
     if (!email) return
     try {
@@ -536,40 +545,57 @@ export default function ManageContent() {
             ) : (
               <div className="space-y-2">
                 {users.map((u, i) => (
-                  <div key={u.id || i} className={`bg-slate-900/80 border rounded-xl p-3 flex items-center justify-between gap-2 ${u.active === false ? 'border-slate-800 opacity-60' : 'border-slate-700/50'}`}>
-                    <div className="min-w-0">
-                      <div className="text-white text-sm font-medium truncate flex items-center gap-1.5">
-                        {u.name}
-                        {u.active === false && <span className="text-[9px] px-1.5 py-0.5 bg-slate-700 text-slate-400 rounded-full flex-shrink-0">nonaktif</span>}
+                  <div key={u.id || i} className={`bg-slate-900/80 border rounded-xl p-3 ${u.active === false ? 'border-slate-800 opacity-60' : 'border-slate-700/50'}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="text-white text-sm font-medium truncate flex items-center gap-1.5">
+                          {u.name}
+                          {u.active === false && <span className="text-[9px] px-1.5 py-0.5 bg-slate-700 text-slate-400 rounded-full flex-shrink-0">nonaktif</span>}
+                        </div>
+                        <div className="text-[11px] text-slate-500 truncate">{u.email || (u.linked_email ? `🔑 ${u.linked_email}` : 'belum ada email')}</div>
+                        <div className="text-[10px] text-blue-400/80 truncate">
+                          🏢 {u.tenantId ? (tenants.find(t => t.id === u.tenantId)?.name || 'Tenant tidak ditemukan') : 'Tanpa tenant'}
+                        </div>
                       </div>
-                      <div className="text-[11px] text-slate-500 truncate">{u.email || (u.linked_email ? `🔑 ${u.linked_email}` : 'belum ada email')}</div>
-                      <div className="text-[10px] text-blue-400/80 truncate">
-                        🏢 {u.tenantId ? (tenants.find(t => t.id === u.tenantId)?.name || 'Tenant tidak ditemukan') : 'Tanpa tenant'}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {typeof u.faces === 'number' && <span className="text-[10px] text-slate-500">{u.faces} foto</span>}
+                        {u.role && (
+                          <select value={u.role} onChange={(e) => handleUpdateRole(u.email, u.name, e.target.value)}
+                            className="text-[10px] px-2 py-1 bg-slate-800 text-slate-300 border border-slate-600 rounded-lg cursor-pointer hover:border-slate-500">
+                            <option value="kasir">Kasir</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                        )}
+                        {u.email && (
+                          u.active === false ? (
+                            <button onClick={() => handleReactivateUser(u.email, u.name)}
+                              className="text-[10px] px-2 py-1 bg-green-500/10 text-green-400 border border-green-500/20 rounded-lg">
+                              ✅ Aktifkan
+                            </button>
+                          ) : (
+                            <button onClick={() => handleDeleteUser(u.email, u.name)}
+                              className="text-[10px] px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg">
+                              🗑️ Nonaktifkan
+                            </button>
+                          )
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {typeof u.faces === 'number' && <span className="text-[10px] text-slate-500">{u.faces} foto</span>}
-                      {u.role && (
-                        <select value={u.role} onChange={(e) => handleUpdateRole(u.email, u.name, e.target.value)}
-                          className="text-[10px] px-2 py-1 bg-slate-800 text-slate-300 border border-slate-600 rounded-lg cursor-pointer hover:border-slate-500">
-                          <option value="kasir">Kasir</option>
-                          <option value="admin">Admin</option>
+                    {tenants.length > 1 && u.active !== false && (
+                      <div className="flex gap-2 mt-2">
+                        <select defaultValue={u.tenantId || ''}
+                          onChange={async e => {
+                            if (!e.target.value || e.target.value === u.tenantId) return
+                            await handleMoveUser(u.id, u.email, u.name, e.target.value)
+                          }}
+                          className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-[10px] text-slate-300">
+                          <option value="">— Pindah ke tenant lain —</option>
+                          {tenants.filter(t => t.id !== u.tenantId && t.active !== false).map(t => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                          ))}
                         </select>
-                      )}
-                      {u.email && (
-                        u.active === false ? (
-                          <button onClick={() => handleReactivateUser(u.email, u.name)}
-                            className="text-[10px] px-2 py-1 bg-green-500/10 text-green-400 border border-green-500/20 rounded-lg">
-                            ✅ Aktifkan
-                          </button>
-                        ) : (
-                          <button onClick={() => handleDeleteUser(u.email, u.name)}
-                            className="text-[10px] px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg">
-                            🗑️ Nonaktifkan
-                          </button>
-                        )
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

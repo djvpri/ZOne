@@ -115,6 +115,24 @@ export default function LoginPage() {
     }
   }
 
+  async function handleDemoLogin() {
+    setLoading(true)
+    setError('')
+    try {
+      const res = await signIn('credentials', {
+        email: 'demo@zomet.my.id',
+        password: 'demo-one-click',
+        redirect: false,
+      })
+      if (res?.error) setError('Akun demo belum siap. Coba lagi nanti.')
+      else router.push('/dashboard')
+    } catch {
+      setError('Gagal masuk sebagai demo')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   async function handleFaceLogin() {
     setLoading(true)
     setError('')
@@ -275,6 +293,13 @@ export default function LoginPage() {
 
         {isLogin ? (
           <>
+            {/* Coba sebagai Demo — satu klik, tanpa ketik kredensial */}
+            <button onClick={handleDemoLogin} disabled={loading}
+              className="w-full mb-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white font-semibold rounded-xl py-3.5 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+              <span>✨</span> {loading ? 'Masuk...' : 'Coba Langsung sebagai Demo'}
+            </button>
+            <p className="text-center text-[11px] text-slate-500 mb-4">Tanpa daftar — langsung jelajahi ekosistem</p>
+
             {/* Login mode */}
             <div className="flex gap-1 mb-4 bg-slate-800/30 p-1 rounded-lg">
               <button onClick={() => { setLoginMode('password'); setError(''); stopCamera(); setFaceStatus('') }}

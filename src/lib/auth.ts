@@ -53,6 +53,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const email = credentials.email as string
           const password = credentials.password as string
 
+          // Login demo satu-klik (tombol "Coba sebagai Demo" di /login) — tanpa
+          // ketik kredensial. Hanya berlaku untuk akun demo, dipicu sentinel
+          // khusus (bukan password asli), jadi aman walau password demo acak.
+          const DEMO_EMAIL = (process.env.DEMO_EMAIL || 'demo@zomet.my.id').toLowerCase()
+          if (email.toLowerCase() === DEMO_EMAIL && password === 'demo-one-click') {
+            const demo = await prisma.user.findUnique({ where: { email: DEMO_EMAIL } })
+            if (!demo) return null
+            return { id: demo.id, name: demo.name, email: demo.email, role: demo.role, faceId: demo.faceId } as any
+          }
+
           // QR login: password format adalah "qr:{token}"
           if (password.startsWith('qr:')) {
             const token = password.slice(3)

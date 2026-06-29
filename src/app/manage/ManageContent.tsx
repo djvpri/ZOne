@@ -391,7 +391,7 @@ export default function ManageContent() {
           </div>
         ) : (
         <>
-        <div className="flex gap-1 mb-2 bg-slate-800/50 p-1 rounded-xl overflow-x-auto no-scrollbar">
+        <div className="flex flex-wrap gap-1 mb-2 bg-slate-800/50 p-1 rounded-xl">
           {appsLoading ? (
             <div className="px-3 py-2.5 text-xs text-slate-500">Memuat app…</div>
           ) : (

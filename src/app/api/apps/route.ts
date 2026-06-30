@@ -8,7 +8,10 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { email: session.user?.email || '' },
-    include: { appLinks: { include: { app: true } } },
+    // Hanya app yang aktif untuk user ini. Link nonaktif (dimatikan admin di
+    // "Akses User") tidak boleh muncul di dashboard — konsisten dgn /api/sso/[slug]
+    // yang juga menolak akses kalau link tidak aktif.
+    include: { appLinks: { where: { active: true }, include: { app: true } } },
   })
 
   if (!user) return NextResponse.json([])

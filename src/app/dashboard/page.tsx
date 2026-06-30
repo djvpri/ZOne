@@ -197,7 +197,7 @@ export default function DashboardPage() {
         {/* Welcome */}
         <div className="mb-6">
           <h2 className="text-xl sm:text-2xl font-bold mb-1">Halo, {user.name?.split(' ')[0]} 👋</h2>
-          <p className="text-slate-400 text-sm">{apps.filter(a => a.app.url !== '#').length} aplikasi aktif</p>
+          <p className="text-slate-400 text-sm">{apps.filter(a => a.active && a.app.url !== '#').length} aplikasi aktif</p>
         </div>
 
         {/* User info card - mobile */}
@@ -227,13 +227,11 @@ export default function DashboardPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {items.map(ua => {
-                  const ssoEnabled = SSO_ENABLED_SLUGS.has(ua.app.slug) && ua.app.url !== '#'
-                  const href = ssoEnabled ? `/api/sso/${ua.app.slug}` : (ua.app.url !== '#' ? ua.app.url : '#')
-                  return (
-                  <a key={ua.app.id} href={href}
-                    target={ssoEnabled ? '_self' : (ua.app.url !== '#' ? '_blank' : undefined)}
-                    rel="noopener noreferrer"
-                    className={`group block bg-slate-900 border border-slate-800 rounded-xl p-4 transition-all active:scale-[0.98] ${ua.app.url !== '#' ? 'hover:border-slate-600 hover:bg-slate-800/50' : 'opacity-50 cursor-not-allowed'}`}>
+                  const clickable = ua.active && ua.app.url !== '#'
+                  const ssoEnabled = clickable && SSO_ENABLED_SLUGS.has(ua.app.slug)
+                  const href = ssoEnabled ? `/api/sso/${ua.app.slug}` : ua.app.url
+                  const cardClass = `group block bg-slate-900 border border-slate-800 rounded-xl p-4 transition-all ${clickable ? 'active:scale-[0.98] hover:border-slate-600 hover:bg-slate-800/50' : 'opacity-50 cursor-not-allowed'}`
+                  const inner = (
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
                         style={{ backgroundColor: ua.app.color + '20' }}>
@@ -245,14 +243,30 @@ export default function DashboardPage() {
                           {ua.app.url === '#' && (
                             <span className="text-[10px] px-1.5 py-0.5 bg-slate-700 text-slate-400 rounded">Soon</span>
                           )}
+                          {ua.app.url !== '#' && !ua.active && (
+                            <span className="text-[10px] px-1.5 py-0.5 bg-amber-900/60 text-amber-400 rounded">Nonaktif</span>
+                          )}
                         </div>
                         <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{ua.app.description}</p>
                       </div>
-                      {ua.app.url !== '#' && (
+                      {clickable && (
                         <span className="text-slate-600 group-hover:text-slate-400 transition-colors text-lg">→</span>
                       )}
                     </div>
-                  </a>
+                  )
+                  return clickable ? (
+                    <a key={ua.app.id} href={href}
+                      target={ssoEnabled ? '_self' : '_blank'}
+                      rel="noopener noreferrer"
+                      className={cardClass}>
+                      {inner}
+                    </a>
+                  ) : (
+                    <div key={ua.app.id} className={cardClass}
+                      title={ua.app.url !== '#' && !ua.active ? 'Akses dinonaktifkan oleh admin' : undefined}
+                      aria-disabled="true">
+                      {inner}
+                    </div>
                   )
                 })}
               </div>
@@ -264,7 +278,7 @@ export default function DashboardPage() {
         <div className="hidden sm:grid grid-cols-4 gap-3 mt-8">
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
             <div className="text-xs text-slate-400 mb-1">Aplikasi Aktif</div>
-            <div className="text-2xl font-bold text-blue-400">{apps.filter(a => a.app.url !== '#').length}</div>
+            <div className="text-2xl font-bold text-blue-400">{apps.filter(a => a.active && a.app.url !== '#').length}</div>
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
             <div className="text-xs text-slate-400 mb-1">Total Apps</div>

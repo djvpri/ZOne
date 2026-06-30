@@ -96,7 +96,7 @@ async function main() {
       if (!r.ok || r.json.error) { console.log('⚠', tag, '- buat user demo gagal:', r.json.error || r.status); continue }
     } else if (demoTenantId && uTenant(demoUser) !== demoTenantId) {
       // pindahkan ke tenant Demo; kalau gagal, jangan di-admin-kan (biar tak pegang tenant asli)
-      const mv = await spokePost(base, { action: 'moveTenant', data: { userId: demoUser.id, tenantId: demoTenantId } })
+      const mv = await spokePost(base, { action: 'moveTenant', email: DEMO_EMAIL, data: { userId: demoUser.id, email: DEMO_EMAIL, tenantId: demoTenantId } })
       if (!mv.ok || mv.json.error) { console.log('⚠', tag, '- demo ada di tenant lain & gagal dipindah (', (mv.json.error || mv.status), ') -> role TIDAK diubah demi keamanan'); continue }
     }
 

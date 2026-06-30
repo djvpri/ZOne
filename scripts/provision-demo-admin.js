@@ -28,6 +28,12 @@ const DEMO_EMAIL = (process.env.DEMO_EMAIL || 'demo@zomet.my.id').toLowerCase()
 const DEMO_NAME = 'Demo'
 const DEMO_PASS = process.env.DEMO_PASSWORD || 'demo-zomet-2026'
 
+// App "ownership-based": user TIDAK di dalam tenant, tapi MEMILIKI entitas
+// (mis. Z-Rooms: Properti.ownerId). Sandbox demo = USER yang memiliki entitas
+// "Demo" (bukan ADMIN global, karena ADMIN di app ini = operator SaaS).
+// createTenant app ini menerima ownerEmail untuk set pemiliknya.
+const OWNERSHIP_BASED = new Set(['zrooms', 'z-rooms'])
+
 const norm = (s) => (s == null ? '' : String(s))
 const tId = (t) => norm(t.id || t.tenantId)
 const tName = (t) => norm(t.name || t.tenantName || t.namaToko)
@@ -79,6 +85,20 @@ async function main() {
     try { data = await spokeGet(base) } catch (e) { console.log('✗', tag, '- spoke tak terjangkau:', e.message); continue }
     const tenants = data.tenants || []
     const users = data.users || []
+
+    // App berbasis kepemilikan (mis. Z-Rooms): demo = USER yang MEMILIKI entitas
+    // "Demo". Tak ada tenant-scoping user -> tak pakai moveTenant/admin global.
+    if (OWNERSHIP_BASED.has(app.slug)) {
+      const demoUser = users.find((u) => norm(u.email).toLowerCase() === DEMO_EMAIL)
+      if (!demoUser) {
+        const rc = await spokePost(base, { action: 'create', data: { name: DEMO_NAME, email: DEMO_EMAIL, password: DEMO_PASS } })
+        if (!rc.ok || rc.json.error) { console.log('⚠', tag, '- buat user demo gagal:', rc.json.error || rc.status); continue }
+      }
+      const rp = await spokePost(base, { action: 'createTenant', data: { name: DEMO_NAME, ownerEmail: DEMO_EMAIL } })
+      if (rp.ok && !rp.json.error) console.log('✓', tag, '- demo = pemilik "Demo" (USER, sandbox kepemilikan)')
+      else console.log('⚠', tag, '- buat entitas Demo milik demo gagal:', (rp.json.error || rp.status))
+      continue
+    }
 
     // 1) Tenant Demo (sandbox)
     let demoTenant = tenants.find((t) => tName(t).toLowerCase() === 'demo')

@@ -185,7 +185,7 @@ export default function ManageContent() {
         id: String(t.id ?? t.tenantId ?? t.tenant_id),
         name: t.name ?? t.namaToko ?? t.nama ?? t.tenantName ?? '(tanpa nama)',
         plan: t.plan,
-        active: t.active ?? t.aktif,
+        active: t.active ?? t.aktif ?? t.isActive,
         expires_at: t.expires_at ?? t.expiresAt ?? t.langganan_sampai ?? null,
       }))
       const normUsers: AppUser[] = (data.users || []).map((u: any) => ({

@@ -36,7 +36,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   const token = jwt.sign(
     { sub: user.id, email: user.email, name: user.name, app: slug },
     CROSS_APP_SECRET,
-    { algorithm: 'HS256', expiresIn: '60s' }
+    { algorithm: 'HS256', expiresIn: '300s' }
   )
 
   return NextResponse.redirect(`${baseUrl}/sso?token=${encodeURIComponent(token)}`)

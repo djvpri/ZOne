@@ -130,6 +130,16 @@ export default function AffiliatePage() {
                 </div>
               </div>
             </div>
+            <a
+              href={`https://wa.me/6282153533164?text=${encodeURIComponent(
+                `DAFTAR USER BARU\nKode Referral saya: ${myAffiliate.referralCode}\nNama Usaha: \nNama Pemilik: \nNo HP: \nJenis Usaha (ZPOS/ZGold/ZResto/dll): \nKota: `
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block bg-green-600 hover:bg-green-500 text-white text-sm font-semibold text-center px-4 py-3 rounded-xl transition-colors"
+            >
+              📋 Daftarkan User Baru via WhatsApp
+            </a>
             {myAffiliate.bankAccount && (
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
                 <div className="text-sm text-slate-400 mb-2">Info Rekening</div>

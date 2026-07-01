@@ -41,7 +41,7 @@ function AffiliateBalanceWidget() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading || balance === null || Number(balance) === 0) return null
+  if (loading || balance === null) return null
 
   const formatRupiah = (amount: string) => {
     return new Intl.NumberFormat('id-ID', {

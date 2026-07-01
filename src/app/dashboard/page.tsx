@@ -24,6 +24,48 @@ const CATEGORY_LABELS: Record<string, { label: string; icon: string }> = {
   platform: { label: 'Platform', icon: '🚀' },
 }
 
+// Affiliate Balance Widget Component
+function AffiliateBalanceWidget() {
+  const [balance, setBalance] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/affiliate')
+      .then(r => r.json())
+      .then(data => {
+        if (data.affiliate) {
+          setBalance(data.affiliate.balance)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading || balance === null || Number(balance) === 0) return null
+
+  const formatRupiah = (amount: string) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(Number(amount))
+  }
+
+  return (
+    <a href="/affiliate" className="block mb-6">
+      <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl p-4 text-white hover:from-green-500 hover:to-emerald-500 transition-all">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs opacity-80 mb-1">💰 Saldo Affiliate</div>
+            <div className="text-2xl font-bold">{formatRupiah(balance)}</div>
+          </div>
+          <div className="text-2xl opacity-80">→</div>
+        </div>
+      </div>
+    </a>
+  )
+}
+
 export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -200,6 +242,9 @@ export default function DashboardPage() {
           <p className="text-slate-400 text-sm">{apps.filter(a => a.active && a.app.url !== '#').length} aplikasi aktif</p>
         </div>
 
+        {/* Affiliate Balance Widget */}
+        <AffiliateBalanceWidget />
+
         {/* User info card - mobile */}
         <div className="sm:hidden bg-slate-900 border border-slate-800 rounded-xl p-4 mb-6">
           <div className="flex items-center gap-3">
@@ -306,6 +351,10 @@ export default function DashboardPage() {
             <span className="text-xl">🏠</span>
             <span className="text-[10px] font-medium">Beranda</span>
           </a>
+          <a href="/affiliate" className="flex flex-col items-center gap-1 px-4 py-1 text-slate-400">
+            <span className="text-xl">💰</span>
+            <span className="text-[10px] font-medium">Affiliate</span>
+          </a>
           <button onClick={() => setShowQrScanner(true)} className="flex flex-col items-center gap-1 px-4 py-1 text-slate-400">
             <span className="text-xl">📷</span>
             <span className="text-[10px] font-medium">Scan QR</span>
@@ -320,10 +369,6 @@ export default function DashboardPage() {
               <span className="text-[10px] font-medium">Admin</span>
             </a>
           )}
-          <button onClick={() => signOut({ callbackUrl: '/login' })} className="flex flex-col items-center gap-1 px-4 py-1 text-slate-400">
-            <span className="text-xl">🚪</span>
-            <span className="text-[10px] font-medium">Keluar</span>
-          </button>
         </div>
       </nav>
 

@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const isAdmin = session.user.role === "ADMIN";
+    const isAdmin = (session.user as any).role === "ADMIN";
 
     if (isAdmin) {
       const affiliates = await prisma.affiliatePartner.findMany({

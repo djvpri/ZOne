@@ -33,7 +33,8 @@ export default function AffiliatePage() {
   })
   const [txForm, setTxForm] = useState({ type: 'EARNED' as any, amount: '', notes: '' })
 
-  const isAdmin = session?.user?.role === 'ADMIN'
+  const user = session?.user as any
+  const isAdmin = user?.role === 'ADMIN'
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')

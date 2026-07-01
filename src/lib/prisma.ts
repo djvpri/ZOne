@@ -10,7 +10,7 @@ const basePrisma = globalForPrisma.prisma || new PrismaClient()
 // rate lebih tinggi karena effort aktif jualan) -- ini semacam "referral
 // pasif" bawaan tiap akun, rate-nya sengaja lebih rendah.
 const AUTO_AFFILIATE_TYPE = 'CUSTOMER_REFERRAL'
-const AUTO_AFFILIATE_RATE = 5
+const AUTO_AFFILIATE_RATE = 50
 
 async function ensureAffiliatePartner(userId: string, seed: string) {
   // Retry beberapa kali kalau referralCode-nya kebetulan bentrok (unique

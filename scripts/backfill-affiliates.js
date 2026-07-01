@@ -17,7 +17,7 @@ const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
 const AUTO_AFFILIATE_TYPE = 'CUSTOMER_REFERRAL'
-const AUTO_AFFILIATE_RATE = 5
+const AUTO_AFFILIATE_RATE = 50
 
 function genCode(seed) {
   const base = (seed || 'USER').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8) || 'USER'

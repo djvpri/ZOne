@@ -223,6 +223,11 @@ export default function DashboardPage() {
               👤
             </a>
             {user.role === 'ADMIN' && (
+              <a href="/affiliate" className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors text-lg" title="Affiliate">
+                💰
+              </a>
+            )}
+            {user.role === 'ADMIN' && (
               <a href="/manage" className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors text-lg" title="Admin">
                 ⚙️
               </a>

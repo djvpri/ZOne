@@ -24,6 +24,68 @@ const CATEGORY_LABELS: Record<string, { label: string; icon: string }> = {
   platform: { label: 'Platform', icon: '🚀' },
 }
 
+// Affiliate Invite Banner -- ajakan gabung program affiliate, selalu tampil
+// (bukan cuma pas ada saldo), nunjukin kode referral sendiri buat dibagikan.
+function AffiliateInviteBanner() {
+  const [code, setCode] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/affiliate')
+      .then(r => r.json())
+      .then(data => { if (data.affiliate?.referralCode) setCode(data.affiliate.referralCode) })
+      .catch(() => {})
+  }, [])
+
+  if (!code) return null
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    navigator.clipboard.writeText(code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const waText = encodeURIComponent(
+    `Halo! Yuk pakai aplikasi bisnis Zomet (POS, laundry, bengkel, dll). Pakai kode referral saya "${code}" ya. Info lebih lanjut hubungi saya.`
+  )
+
+  return (
+    <a href="/affiliate" className="block mb-6">
+      <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-xl p-4 text-white hover:from-amber-400 hover:to-orange-500 transition-all">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-bold mb-1">💸 Jadi Affiliate, Ajak Pengguna Baru!</div>
+            <div className="text-xs opacity-90 mb-2">
+              Dapatkan komisi minimal Rp 50.000/bulan untuk setiap member aktif yang kamu ajak.
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono font-bold text-sm bg-black/20 rounded px-2 py-1">{code}</span>
+              <button
+                onClick={handleCopy}
+                className="text-xs font-semibold bg-white/20 hover:bg-white/30 rounded px-2 py-1 transition-colors"
+              >
+                {copied ? '✓ Tersalin' : 'Salin Kode'}
+              </button>
+              <a
+                href={`https://wa.me/?text=${waText}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-xs font-semibold bg-white/20 hover:bg-white/30 rounded px-2 py-1 transition-colors"
+              >
+                Bagikan via WhatsApp
+              </a>
+            </div>
+          </div>
+          <div className="text-2xl opacity-80 shrink-0">→</div>
+        </div>
+      </div>
+    </a>
+  )
+}
+
 // Affiliate Balance Widget Component
 function AffiliateBalanceWidget() {
   const [balance, setBalance] = useState<string | null>(null)
@@ -246,6 +308,9 @@ export default function DashboardPage() {
           <h2 className="text-xl sm:text-2xl font-bold mb-1">Halo, {user.name?.split(' ')[0]} 👋</h2>
           <p className="text-slate-400 text-sm">{apps.filter(a => a.active && a.app.url !== '#').length} aplikasi aktif</p>
         </div>
+
+        {/* Affiliate Invite Banner */}
+        <AffiliateInviteBanner />
 
         {/* Affiliate Balance Widget */}
         <AffiliateBalanceWidget />

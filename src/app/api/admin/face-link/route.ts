@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-const CROSS_APP_SECRET = process.env.CROSS_APP_SECRET || 'z-ecosystem-admin-2026'
+// Dual secret support during migration (2026-07-02)
+const NEW_SECRET = process.env.CROSS_APP_SECRET || 'uurclTHL375CiZeWi2g4T3GczU2YNY9I1wzjlsVTgSk'
+const OLD_SECRET = 'z-ecosystem-admin-2026'
+const VALID_SECRETS = [NEW_SECRET, OLD_SECRET]
 const ZFACE_URL = 'https://zface.zomet.my.id'
 
 async function requireAdmin() {
@@ -18,7 +21,7 @@ export async function GET() {
   try {
     // Ambil semua wajah dari ZFace (lintas org)
     const zfaceRes = await fetch(`${ZFACE_URL}/api/admin/cross-app`, {
-      headers: { Authorization: `Bearer ${CROSS_APP_SECRET}` },
+      headers: { Authorization: `Bearer ${NEW_SECRET}` },
       signal: AbortSignal.timeout(10000),
     })
     if (!zfaceRes.ok) return NextResponse.json({ error: 'Gagal mengambil data dari ZFace' }, { status: 502 })

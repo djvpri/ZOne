@@ -8,7 +8,14 @@ import { prisma } from '@/lib/prisma'
 // Daftar app & URL-nya dibaca dari tabel App (database), BUKAN hardcode di kode,
 // supaya nambah app baru cukup tambah baris di /manage, tanpa edit kode/redeploy.
 
-const CROSS_APP_SECRET = process.env.CROSS_APP_SECRET || 'z-ecosystem-admin-2026'
+// Dual secret support during migration (2026-07-02)
+const NEW_SECRET = process.env.CROSS_APP_SECRET || 'uurclTHL375CiZeWi2g4T3GczU2YNY9I1wzjlsVTgSk'
+const OLD_SECRET = 'z-ecosystem-admin-2026'
+const VALID_SECRETS = [NEW_SECRET, OLD_SECRET]
+
+function isValidSecret(token: string): boolean {
+  return VALID_SECRETS.includes(token)
+}
 
 async function getApp(slug: string) {
   return prisma.app.findUnique({ where: { slug: slug.toLowerCase() } })
@@ -49,7 +56,7 @@ export async function GET(req: NextRequest) {
     const baseUrl = app.url.trim().replace(/\/+$/, '').toLowerCase()
 
     const response = await fetch(`${baseUrl}/api/admin/cross-app`, {
-      headers: { Authorization: `Bearer ${CROSS_APP_SECRET}` },
+      headers: { Authorization: `Bearer ${NEW_SECRET}` },
     })
 
     if (!response.ok) {
@@ -80,7 +87,7 @@ export async function POST(req: NextRequest) {
     const response = await fetch(`${baseUrl}/api/admin/cross-app`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${CROSS_APP_SECRET}`,
+        Authorization: `Bearer ${NEW_SECRET}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ action, email, data }),

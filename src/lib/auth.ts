@@ -4,7 +4,14 @@ import Google from 'next-auth/providers/google'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 
-const CROSS_APP_SECRET = process.env.CROSS_APP_SECRET || 'z-ecosystem-admin-2026'
+// Dual secret support during migration (2026-07-02)
+const NEW_SECRET = process.env.CROSS_APP_SECRET || 'uurclTHL375CiZeWi2g4T3GczU2YNY9I1wzjlsVTgSk'
+const OLD_SECRET = 'z-ecosystem-admin-2026'
+const VALID_SECRETS = [NEW_SECRET, OLD_SECRET]
+
+function isValidSecret(token: string): boolean {
+  return VALID_SECRETS.includes(token)
+}
 const APPS = {
   zgold: 'https://zgold-production.up.railway.app',
   zbengkel: 'https://zbengkel-production.up.railway.app',
@@ -15,7 +22,7 @@ async function findUserInOtherApps(email: string): Promise<{ name: string; sourc
   for (const [key, baseUrl] of Object.entries(APPS)) {
     try {
       const res = await fetch(`${baseUrl}/api/admin/cross-app?app=${key}`, {
-        headers: { 'Authorization': `Bearer ${CROSS_APP_SECRET}` },
+        headers: { 'Authorization': `Bearer ${NEW_SECRET}` },
         signal: AbortSignal.timeout(5000),
       })
       if (!res.ok) continue

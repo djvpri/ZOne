@@ -3,6 +3,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
+import { Stars, Key, Camera, Phone, CheckCircleFill, Clock, ArrowRepeat } from 'react-bootstrap-icons'
 
 type LoginMode = 'password' | 'face' | 'qr'
 
@@ -297,7 +298,7 @@ export default function LoginPage() {
             {/* Coba sebagai Demo — satu klik, tanpa ketik kredensial */}
             <button onClick={handleDemoLogin} disabled={loading}
               className="w-full mb-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white font-semibold rounded-xl py-3.5 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
-              <span>✨</span> {loading ? 'Masuk...' : 'Coba Langsung sebagai Demo'}
+              <Stars size={16} /> {loading ? 'Masuk...' : 'Coba Langsung sebagai Demo'}
             </button>
             <p className="text-center text-[11px] text-slate-500 mb-4">Tanpa daftar — langsung jelajahi ekosistem</p>
 
@@ -305,11 +306,11 @@ export default function LoginPage() {
             <div className="flex gap-1 mb-4 bg-slate-800/30 p-1 rounded-lg">
               <button onClick={() => { setLoginMode('password'); setError(''); stopCamera(); setFaceStatus('') }}
                 className={`flex-1 py-2.5 text-xs font-medium rounded-md transition ${loginMode === 'password' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
-                🔑 Password
+                <Key size={14} className="inline mr-1" /> Password
               </button>
               <button onClick={() => { setLoginMode('face'); setError(''); setFaceStatus('') }}
                 className={`flex-1 py-2.5 text-xs font-medium rounded-md transition ${loginMode === 'face' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
-                📷 Wajah
+                <Camera size={14} className="inline mr-1" /> Wajah
               </button>
             </div>
 
@@ -343,7 +344,7 @@ export default function LoginPage() {
                   {!cameraActive && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center">
-                        <span className="text-4xl mb-3 block">📷</span>
+                        <Camera size={40} className="mb-3 mx-auto text-slate-500" />
                         <p className="text-sm text-slate-400">Klik tombol di bawah</p>
                       </div>
                     </div>
@@ -356,7 +357,7 @@ export default function LoginPage() {
                 </div>
                 <button onClick={handleFaceLogin} disabled={loading}
                   className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold rounded-xl py-3.5 transition-all active:scale-[0.98]">
-                  {loading ? 'Memproses...' : '📷 Login dengan Wajah'}
+                  {loading ? 'Memproses...' : (<><Camera size={16} className="inline mr-1.5" />Login dengan Wajah</>)}
                 </button>
               </div>
             )}
@@ -373,18 +374,18 @@ export default function LoginPage() {
                     />
                   ) : qrStatus === 'scanned' ? (
                     <div className="text-center">
-                      <div className="text-4xl mb-2">📱</div>
+                      <Phone size={40} className="mb-2 mx-auto text-slate-600" />
                       <p className="text-slate-600 text-sm font-medium">QR Di-scan!</p>
                       <p className="text-slate-500 text-xs">Konfirmasi di HP...</p>
                     </div>
                   ) : qrStatus === 'approved' ? (
                     <div className="text-center">
-                      <div className="text-4xl mb-2">✅</div>
+                      <CheckCircleFill size={40} className="mb-2 mx-auto text-emerald-500" />
                       <p className="text-slate-600 text-sm font-medium">Masuk...</p>
                     </div>
                   ) : qrStatus === 'expired' ? (
                     <div className="text-center">
-                      <div className="text-4xl mb-2">⏱️</div>
+                      <Clock size={40} className="mb-2 mx-auto text-amber-500" />
                       <p className="text-slate-600 text-sm font-medium">QR Kedaluwarsa</p>
                     </div>
                   ) : (
@@ -399,7 +400,7 @@ export default function LoginPage() {
                 {(qrStatus === 'expired' || qrStatus === 'idle') && (
                   <button onClick={generateQr}
                     className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl py-3.5 transition-all">
-                    🔄 Generate QR Baru
+                    <ArrowRepeat size={15} className="inline mr-1.5" />Generate QR Baru
                   </button>
                 )}
               </div>
@@ -410,7 +411,7 @@ export default function LoginPage() {
               <div className="mt-4 pt-4 border-t border-slate-800">
                 <button onClick={() => setLoginMode('qr')}
                   className="w-full flex items-center justify-center gap-2 text-xs text-slate-500 hover:text-slate-300 transition-colors py-2">
-                  <span>📱</span> Login dengan QR code dari HP
+                  <Phone size={13} /> Login dengan QR code dari HP
                 </button>
               </div>
             )}

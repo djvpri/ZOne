@@ -11,6 +11,7 @@ const APPS = [
   { slug: 'zabsen', name: 'Z-Absen', description: 'Absensi digital', icon: '📋', url: 'https://z-absen.zomet.my.id', color: '#65a30d', category: 'hr', order: 6 },
   { slug: 'zface', name: 'Z-Face', description: 'Pengenalan wajah', icon: '👤', url: 'https://zface.zomet.my.id', color: '#9333ea', category: 'ai', order: 7 },
   { slug: 'zlaundry', name: 'ZLaundry', description: 'POS laundry', icon: '👕', url: 'https://zlaundry.zomet.my.id', color: '#0284c7', category: 'pos', order: 8 },
+  { slug: 'ztrans', name: 'Z-Trans', description: 'Tiket & manajemen bus', icon: '🚌', url: 'https://ztrans.zomet.my.id', color: '#f5a524', category: 'transport', order: 9 },
 ]
 
 async function seed() {

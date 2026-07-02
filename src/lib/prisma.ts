@@ -48,6 +48,15 @@ function buildPrismaClient() {
           await ensureAffiliatePartner(result.id, result.name || result.email)
           return result
         },
+        // upsert juga dipakai buat bikin user (mis. sinkron spoke -> hub di
+        // /api/admin/cross-app), jadi harus ditangkap juga. Kalau ternyata
+        // jalur update (user sudah ada), ensureAffiliatePartner aman: bentrok
+        // unique userId (P2002) diabaikan.
+        async upsert({ args, query }: any) {
+          const result = await query(args)
+          await ensureAffiliatePartner(result.id, result.name || result.email)
+          return result
+        },
       },
     },
   })

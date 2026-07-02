@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-
-const CROSS_APP_SECRET = process.env.CROSS_APP_SECRET || 'z-ecosystem-admin-2026'
+import { getCrossAppSecret } from '@/lib/secrets'
 const ZFACE_URL = 'https://zface.zomet.my.id'
 
 async function requireAdmin() {
@@ -18,7 +17,7 @@ export async function GET() {
   try {
     // Ambil semua wajah dari ZFace (lintas org)
     const zfaceRes = await fetch(`${ZFACE_URL}/api/admin/cross-app`, {
-      headers: { Authorization: `Bearer ${CROSS_APP_SECRET}` },
+      headers: { Authorization: `Bearer ${getCrossAppSecret()}` },
       signal: AbortSignal.timeout(10000),
     })
     if (!zfaceRes.ok) return NextResponse.json({ error: 'Gagal mengambil data dari ZFace' }, { status: 502 })

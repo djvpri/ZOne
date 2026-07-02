@@ -103,7 +103,7 @@ export default function AffiliatePage() {
           </div>
           {isAdmin && (
             <button onClick={async () => {
-              const r = await fetch('/api/users'); const d = await r.json(); setUsers(d.users || [])
+              const r = await fetch('/api/admin/users'); const d = await r.json(); setUsers(d.users || [])
               setShowCreateModal(true)
             }} className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2 rounded-lg">
               + Tambah Mitra
@@ -130,6 +130,16 @@ export default function AffiliatePage() {
                 </div>
               </div>
             </div>
+            <a
+              href={`https://wa.me/6282153533164?text=${encodeURIComponent(
+                `DAFTAR USER BARU\nKode Referral saya: ${myAffiliate.referralCode}\nNama Usaha: \nNama Pemilik: \nNo HP: \nJenis Usaha (ZPOS/ZGold/ZResto/dll): \nKota: `
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block bg-green-600 hover:bg-green-500 text-white text-sm font-semibold text-center px-4 py-3 rounded-xl transition-colors"
+            >
+              📋 Daftarkan User Baru via WhatsApp
+            </a>
             {myAffiliate.bankAccount && (
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
                 <div className="text-sm text-slate-400 mb-2">Info Rekening</div>
@@ -244,7 +254,7 @@ export default function AffiliatePage() {
                 <div className="text-center py-12">
                   <div className="text-5xl mb-4">💼</div>
                   <p className="text-slate-400 mb-4">Belum ada mitra affiliate</p>
-                  <button onClick={async () => { const r = await fetch('/api/users'); const d = await r.json(); setUsers(d.users || []); setShowCreateModal(true) }}
+                  <button onClick={async () => { const r = await fetch('/api/admin/users'); const d = await r.json(); setUsers(d.users || []); setShowCreateModal(true) }}
                     className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-6 py-3 rounded-lg">+ Tambah Mitra Pertama</button>
                 </div>
               )}

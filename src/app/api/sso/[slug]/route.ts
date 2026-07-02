@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
-
-const CROSS_APP_SECRET = process.env.CROSS_APP_SECRET || 'z-ecosystem-admin-2026'
+import { getCrossAppSecret } from '@/lib/secrets'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -35,7 +34,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   const baseUrl = app.url.trim().replace(/\/+$/, '').toLowerCase()
   const token = jwt.sign(
     { sub: user.id, email: user.email, name: user.name, app: slug },
-    CROSS_APP_SECRET,
+    getCrossAppSecret(),
     { algorithm: 'HS256', expiresIn: '300s' }
   )
 

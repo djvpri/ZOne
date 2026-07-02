@@ -2,9 +2,14 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
+import { getCrossAppSecret, getAuthSecret } from '@/lib/secrets'
 
 const ZFACE_SECRET = process.env.FACE_LOGIN_SECRET || process.env.NEXTAUTH_SECRET || ''
-const CROSS_APP_SECRET = process.env.CROSS_APP_SECRET || 'z-ecosystem-admin-2026'
+
+// Masa berlaku loginToken yang diterbitkan endpoint ini. Cukup untuk
+// round-trip client -> signIn('credentials'), tapi terlalu pendek untuk
+// disalahgunakan kalau bocor.
+const LOGIN_TOKEN_TTL = '120s'
 const APPS = {
   zgold: 'https://zgold-production.up.railway.app',
   zbengkel: 'https://zbengkel-production.up.railway.app',
@@ -15,7 +20,7 @@ async function findUserInOtherApps(email: string): Promise<{ name: string; sourc
   for (const [key, baseUrl] of Object.entries(APPS)) {
     try {
       const res = await fetch(`${baseUrl}/api/admin/cross-app?app=${key}`, {
-        headers: { 'Authorization': `Bearer ${CROSS_APP_SECRET}` },
+        headers: { 'Authorization': `Bearer ${getCrossAppSecret()}` },
         signal: AbortSignal.timeout(5000),
       })
       if (!res.ok) continue
@@ -72,9 +77,8 @@ export async function POST(req: Request) {
     if (!user && personName) {
       try {
         const ZFACE_URL = 'https://zface.zomet.my.id'
-        const CROSS_SECRET = process.env.CROSS_APP_SECRET || 'z-ecosystem-admin-2026'
         const zfaceRes = await fetch(`${ZFACE_URL}/api/admin/cross-app`, {
-          headers: { Authorization: `Bearer ${CROSS_SECRET}` },
+          headers: { Authorization: `Bearer ${getCrossAppSecret()}` },
           signal: AbortSignal.timeout(8000),
         })
         if (zfaceRes.ok) {
@@ -181,7 +185,17 @@ export async function POST(req: Request) {
       })
     }
 
-    // 4. Return verified user info
+    // 4. Terbitkan loginToken bertanda tangan (bukti verifikasi wajah sudah lolos).
+    // Token inilah yang dipakai client untuk signIn('credentials') dengan format
+    // password "verified-face:{loginToken}". authorize() di lib/auth.ts memverifikasi
+    // tanda tangannya — jadi endpoint credentials tidak bisa dilewati dengan
+    // mengirim faceId sembarangan.
+    const loginToken = jwt.sign(
+      { purpose: 'zone-face-login', sub: user.id, email: user.email, faceId },
+      getAuthSecret(),
+      { algorithm: 'HS256', expiresIn: LOGIN_TOKEN_TTL }
+    )
+
     return NextResponse.json({
       success: true,
       id: user.id,
@@ -191,6 +205,7 @@ export async function POST(req: Request) {
       faceId,
       personName,
       similarity,
+      loginToken,
     })
   } catch (error) {
     console.error('Face verify error:', error)

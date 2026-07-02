@@ -19,11 +19,20 @@
 // Idempotent: aman dijalankan berulang.
 
 const { PrismaClient } = require('@prisma/client')
+
+// Repo ini public — jangan pernah fallback ke secret hardcode.
+function requireCrossAppSecret() {
+  if (!process.env.CROSS_APP_SECRET) {
+    console.error('CROSS_APP_SECRET belum di-set. Jalankan dengan env Railway.')
+    process.exit(1)
+  }
+  return process.env.CROSS_APP_SECRET
+}
 const bcrypt = require('bcryptjs')
 const { randomBytes } = require('crypto')
 
 const p = new PrismaClient()
-const SECRET = process.env.CROSS_APP_SECRET || 'z-ecosystem-admin-2026'
+const SECRET = requireCrossAppSecret()
 const DEMO_EMAIL = (process.env.DEMO_EMAIL || 'demo@zomet.my.id').toLowerCase()
 const DEMO_NAME = 'Demo'
 const DEMO_PASS = process.env.DEMO_PASSWORD || 'demo-zomet-2026'

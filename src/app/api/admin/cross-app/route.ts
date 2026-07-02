@@ -3,19 +3,12 @@ import bcrypt from 'bcryptjs'
 import { randomBytes } from 'crypto'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getCrossAppSecret } from '@/lib/secrets'
 
 // Cross-app management API — proxy ke admin API tiap app spoke (ZGold, ZBengkel, dst).
 // Daftar app & URL-nya dibaca dari tabel App (database), BUKAN hardcode di kode,
 // supaya nambah app baru cukup tambah baris di /manage, tanpa edit kode/redeploy.
 
-// Dual secret support during migration (2026-07-02)
-const NEW_SECRET = process.env.CROSS_APP_SECRET || 'uurclTHL375CiZeWi2g4T3GczU2YNY9I1wzjlsVTgSk'
-const OLD_SECRET = 'z-ecosystem-admin-2026'
-const VALID_SECRETS = [NEW_SECRET, OLD_SECRET]
-
-function isValidSecret(token: string): boolean {
-  return VALID_SECRETS.includes(token)
-}
 
 async function getApp(slug: string) {
   return prisma.app.findUnique({ where: { slug: slug.toLowerCase() } })
@@ -56,7 +49,7 @@ export async function GET(req: NextRequest) {
     const baseUrl = app.url.trim().replace(/\/+$/, '').toLowerCase()
 
     const response = await fetch(`${baseUrl}/api/admin/cross-app`, {
-      headers: { Authorization: `Bearer ${NEW_SECRET}` },
+      headers: { Authorization: `Bearer ${getCrossAppSecret()}` },
     })
 
     if (!response.ok) {
@@ -87,7 +80,7 @@ export async function POST(req: NextRequest) {
     const response = await fetch(`${baseUrl}/api/admin/cross-app`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${NEW_SECRET}`,
+        Authorization: `Bearer ${getCrossAppSecret()}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ action, email, data }),

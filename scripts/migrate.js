@@ -22,32 +22,26 @@ async function migrate() {
   await run(`CREATE INDEX IF NOT EXISTS "QrSession_token_idx" ON "QrSession"(token)`)
   await run(`CREATE INDEX IF NOT EXISTS "QrSession_expiresAt_idx" ON "QrSession"("expiresAt")`)
 
+  // Sistem afiliasi (sebelumnya dibuat manual — sekarang idempoten di sini
+  // supaya deploy fresh langsung lengkap)
+  await run(`DO $x$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname='AffiliateType') THEN CREATE TYPE "AffiliateType" AS ENUM ('MITRA_LAPANGAN','CUSTOMER_REFERRAL'); END IF; END $x$`)
+  await run(`CREATE TABLE IF NOT EXISTS "AffiliatePartner" (id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),"userId" TEXT NOT NULL UNIQUE,name TEXT NOT NULL,type "AffiliateType" NOT NULL,"referralCode" TEXT NOT NULL UNIQUE,"commissionRate" DECIMAL(5,2) NOT NULL,balance DECIMAL(12,2) NOT NULL DEFAULT 0,"bankAccount" TEXT,"bankName" TEXT,status TEXT NOT NULL DEFAULT 'ACTIVE',"createdAt" TIMESTAMP NOT NULL DEFAULT now(),CONSTRAINT "AffiliatePartner_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"(id) ON DELETE CASCADE)`)
+  await run(`CREATE TABLE IF NOT EXISTS "CommissionTransaction" (id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),"affiliatePartnerId" TEXT NOT NULL,type TEXT NOT NULL,amount DECIMAL(12,2) NOT NULL,notes TEXT,"createdBy" TEXT NOT NULL,"createdAt" TIMESTAMP NOT NULL DEFAULT now(),CONSTRAINT "CommissionTransaction_affiliatePartnerId_fkey" FOREIGN KEY ("affiliatePartnerId") REFERENCES "AffiliatePartner"(id) ON DELETE CASCADE)`)
+  await run(`CREATE INDEX IF NOT EXISTS "CommissionTransaction_affiliatePartnerId_idx" ON "CommissionTransaction"("affiliatePartnerId")`)
+  await run(`CREATE INDEX IF NOT EXISTS "CommissionTransaction_createdAt_idx" ON "CommissionTransaction"("createdAt")`)
+
   console.log('Migrations done ✓')
 }
 
-migrate().catch(e => { console.error('Migration error:', e.message); process.exit(0) }).finally(() => p.$disconnect())
-
-// Fix enum Role
-async function fixRole() {
-  const p = new PrismaClient()
-  try {
-    // Cek tipe kolom role saat ini
-    await p.$executeRawUnsafe(`ALTER TABLE "User" ALTER COLUMN role DROP DEFAULT`)
-    await p.$executeRawUnsafe(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname='Role') THEN CREATE TYPE "Role" AS ENUM ('USER','ADMIN','staff'); END IF; END $$`)
-    await p.$executeRawUnsafe(`ALTER TABLE "User" ALTER COLUMN role TYPE "Role" USING role::"Role"`)
-    await p.$executeRawUnsafe(`ALTER TABLE "User" ALTER COLUMN role SET DEFAULT 'USER'::"Role"`)
-    console.log('Role enum fixed ✓')
-  } catch(e) { console.warn('Role fix warn:', e.message?.slice(0,100)) }
-  finally { await p.$disconnect() }
-}
-
-// Normalisasi role lowercase ke ADMIN
+// Normalisasi role lowercase legacy ('admin'/'staff') ke ADMIN
 async function normalizeRoles() {
-  const p2 = new PrismaClient()
   try {
-    await p2.$executeRawUnsafe(`UPDATE "User" SET role = 'ADMIN' WHERE role IN ('admin', 'staff')`)
+    await p.$executeRawUnsafe(`UPDATE "User" SET role = 'ADMIN' WHERE role IN ('admin', 'staff')`)
     console.log('Roles normalized ✓')
   } catch(e) { console.warn('normalize warn:', e.message?.slice(0,80)) }
-  finally { await p2.$disconnect() }
 }
-normalizeRoles()
+
+migrate()
+  .then(() => normalizeRoles())
+  .catch(e => { console.error('Migration error:', e.message); process.exit(0) })
+  .finally(() => p.$disconnect())

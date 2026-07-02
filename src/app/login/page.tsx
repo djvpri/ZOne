@@ -210,10 +210,11 @@ export default function LoginPage() {
 
       const verifyData = await verifyRes.json()
 
-      // Login pakai token verified yang sudah divalidasi face-verify (bukan fuzzy name lagi)
+      // Login pakai loginToken bertanda tangan dari face-verify.
+      // authorize() memverifikasi JWT-nya, jadi tidak bisa dipalsukan.
       const signInRes = await signIn('credentials', {
         email: verifyData.email,
-        password: `verified-face:${verifyData.faceId}`,
+        password: `verified-face:${verifyData.loginToken}`,
         redirect: false,
       })
 

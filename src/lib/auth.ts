@@ -2,27 +2,26 @@ import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import Google from 'next-auth/providers/google'
 import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
+import { randomBytes } from 'crypto'
 import { prisma } from '@/lib/prisma'
+import { getCrossAppSecret, getAuthSecret } from '@/lib/secrets'
 
-// Dual secret support during migration (2026-07-02)
-const NEW_SECRET = process.env.CROSS_APP_SECRET || 'uurclTHL375CiZeWi2g4T3GczU2YNY9I1wzjlsVTgSk'
-const OLD_SECRET = 'z-ecosystem-admin-2026'
-const VALID_SECRETS = [NEW_SECRET, OLD_SECRET]
-
-function isValidSecret(token: string): boolean {
-  return VALID_SECRETS.includes(token)
-}
 const APPS = {
   zgold: 'https://zgold-production.up.railway.app',
   zbengkel: 'https://zbengkel-production.up.railway.app',
   zlaundry: 'https://zlaundry-production.up.railway.app',
 }
 
+// Grace period sesudah QR di-approve di HP: desktop polling tiap 2 detik,
+// jadi 2 menit lebih dari cukup. Lewat itu token dianggap basi.
+const QR_APPROVAL_GRACE_MS = 2 * 60 * 1000
+
 async function findUserInOtherApps(email: string): Promise<{ name: string; source: string } | null> {
   for (const [key, baseUrl] of Object.entries(APPS)) {
     try {
       const res = await fetch(`${baseUrl}/api/admin/cross-app?app=${key}`, {
-        headers: { 'Authorization': `Bearer ${NEW_SECRET}` },
+        headers: { 'Authorization': `Bearer ${getCrossAppSecret()}` },
         signal: AbortSignal.timeout(5000),
       })
       if (!res.ok) continue
@@ -55,7 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
-        
+
         try {
           const email = credentials.email as string
           const password = credentials.password as string
@@ -70,61 +69,64 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return { id: demo.id, name: demo.name, email: demo.email, role: demo.role, faceId: demo.faceId } as any
           }
 
-          // QR login: password format adalah "qr:{token}"
+          // QR login: password format "qr:{token}"
+          // Token hanya valid kalau: status APPROVED, email cocok, approve-nya
+          // masih segar (< grace period), dan langsung DIKONSUMSI (sekali pakai)
+          // supaya tidak bisa di-replay.
           if (password.startsWith('qr:')) {
             const token = password.slice(3)
-            const { prisma } = await import('@/lib/prisma')
             const qr = await prisma.qrSession.findUnique({ where: { token } })
             if (!qr || qr.status !== 'APPROVED' || qr.userEmail !== email) return null
+            if (!qr.approvedAt || Date.now() - qr.approvedAt.getTime() > QR_APPROVAL_GRACE_MS) return null
+
             const user = await prisma.user.findUnique({ where: { email } })
             if (!user) return null
+
+            // Konsumsi token: tandai EXPIRED supaya tidak bisa dipakai kedua kali
+            await prisma.qrSession.update({ where: { token }, data: { status: 'EXPIRED' } })
+
             return { id: user.id, email: user.email, name: user.name, role: user.role }
           }
 
-          // Verified face login: password format "verified-face:{faceId}"
-          // Sudah divalidasi oleh /api/auth/face-verify, cukup cek email + faceId cocok
+          // Verified face login: password format "verified-face:{loginToken}"
+          // loginToken adalah JWT bertanda tangan yang HANYA bisa diterbitkan oleh
+          // /api/auth/face-verify setelah token ZFace tervalidasi. Di sini cukup
+          // verifikasi tanda tangan + purpose + kecocokan email. Tanpa JWT valid,
+          // jalur ini tidak bisa dipakai — menutup celah "kirim faceId sembarang".
           if (password.startsWith('verified-face:')) {
-            const faceId = password.slice(14)
-            const user = await prisma.user.findUnique({ where: { email } })
-            if (!user) return null
-            // Accept kalau faceId cocok ATAU user memang punya faceId yang sudah ditautkan
-            if (user.faceId === faceId || user.faceId) {
-              return { id: user.id, email: user.email, name: user.name, role: user.role }
+            const loginToken = password.slice(14)
+            let payload: any
+            try {
+              payload = jwt.verify(loginToken, getAuthSecret())
+            } catch {
+              return null
             }
-            return null
+            if (payload?.purpose !== 'zone-face-login') return null
+            if ((payload?.email || '').toLowerCase() !== email.toLowerCase()) return null
+
+            const user = await prisma.user.findUnique({ where: { id: payload.sub as string } })
+            if (!user || user.email.toLowerCase() !== email.toLowerCase()) return null
+
+            return {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              role: user.role,
+              faceId: user.faceId,
+            } as any
           }
 
-          // Face login: password format is "face:PersonName"
-          if (password.startsWith('face:')) {
-            const faceName = password.slice(5)
-            const user = await prisma.user.findUnique({ where: { email } })
-            if (!user) return null
-            
-            const userName = user.name.toLowerCase().trim()
-            const faceNameLower = faceName.toLowerCase().trim()
-            
-            if (userName.includes(faceNameLower) || faceNameLower.includes(userName.split(' ')[0])) {
-              return {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                faceId: user.faceId,
-              } as any
-            }
-            return null
-          }
-          
           // Normal password login
           let user = await prisma.user.findUnique({ where: { email } })
           let isNewSSO = false
-          
+
           // If not in ZOne DB, check other apps (SSO)
           if (!user) {
             const crossUser = await findUserInOtherApps(email)
             if (crossUser) {
-              // Auto-create ZOne account
-              const hashedPw = await bcrypt.hash(`face:${crossUser.name}`, 10)
+              // Auto-create ZOne account dengan password placeholder acak
+              // (user login lewat SSO/face/QR, atau reset password nanti)
+              const hashedPw = await bcrypt.hash(randomBytes(24).toString('hex'), 10)
               user = await prisma.user.create({
                 data: {
                   name: crossUser.name,
@@ -138,13 +140,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }
           }
           if (!user) return null
-          
+
           // For SSO auto-created users, skip password check (they'll set up later)
           if (!isNewSSO) {
             const valid = await bcrypt.compare(password, user.password)
             if (!valid) return null
           }
-          
+
           return {
             id: user.id,
             name: user.name,
@@ -176,7 +178,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           let dbUser = await prisma.user.findUnique({ where: { email: user.email } })
           if (!dbUser) {
             // Belum ada akun → daftarkan otomatis
-            const randomPw = await bcrypt.hash(Math.random().toString(36), 10)
+            const randomPw = await bcrypt.hash(randomBytes(24).toString('hex'), 10)
             dbUser = await prisma.user.create({
               data: {
                 email: user.email,

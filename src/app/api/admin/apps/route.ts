@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   const app = await prisma.app.create({
     data: {
       slug, name, url,
-      icon: body.icon || '📦',
+      icon: body.icon || 'box-seam',
       description: body.description || '',
       color: body.color || '#2563eb',
       category: body.category || 'general',

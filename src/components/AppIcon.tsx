@@ -10,7 +10,7 @@ import {
   ClipboardCheck, PersonBoundingBox, Basket3, BusFront, Scissors,
   People, CalendarCheck, CashCoin, ShieldLock, GraphUp, Hospital,
   RocketTakeoff, BoxSeam, Cpu, QrCode, Bank, Grid, PersonBadge,
-  QuestionCircle,
+  QuestionCircle, Activity, Trophy,
 } from 'react-bootstrap-icons'
 import type { ComponentType } from 'react'
 
@@ -39,6 +39,8 @@ const ICONS: Record<string, ComponentType<{ size?: number; className?: string; c
   'bank': Bank,
   'grid': Grid,
   'person-badge': PersonBadge,
+  'activity': Activity,
+  'trophy': Trophy,
 }
 
 export default function AppIcon({ name, size = 24, color, className }: {

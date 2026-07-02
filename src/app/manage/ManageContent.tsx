@@ -3,7 +3,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import AppIcon from '@/components/AppIcon'
-import { Tools, BoxArrowRight, BoxSeam, ShieldLock, CheckLg, Link45deg, PencilSquare, CheckCircleFill, Trash, Key, Building } from 'react-bootstrap-icons'
+import { Tools, BoxArrowRight, BoxSeam, ShieldLock, CheckLg, Link45deg, PencilSquare, CheckCircleFill, Trash, Key, Building, Palette } from 'react-bootstrap-icons'
 
 interface Tenant {
   id: string; name: string; plan?: string; active?: boolean; expires_at?: string | null; quota?: number
@@ -430,6 +430,27 @@ export default function ManageContent() {
                 <Link45deg size={15} className="inline mr-1.5" />Buka {apps.find(a => a.slug === activeApp)!.name}
               </a>
             )}
+            <button
+              onClick={async () => {
+                const current = apps.find(a => a.slug === activeApp)!
+                const icon = prompt(`Nama ikon Bootstrap untuk "${current.name}" (mis. scissors, bus-front, shop):`, current.icon || '')
+                if (!icon) return
+                try {
+                  const res = await fetch('/api/admin/apps', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: current.id, icon }),
+                  })
+                  if (!res.ok) throw new Error((await res.json()).error || 'Gagal update ikon')
+                  flash('Ikon app diperbarui')
+                  fetchApps()
+                  fetchData(activeApp)
+                } catch (err: any) { setError(err.message) }
+              }}
+              className="text-blue-400 underline underline-offset-2"
+            >
+              <Palette size={14} className="inline mr-1.5" />Edit Ikon
+            </button>
             <button
               onClick={async () => {
                 const current = apps.find(a => a.slug === activeApp)!

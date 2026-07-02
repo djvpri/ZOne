@@ -24,6 +24,10 @@ const CATEGORY_LABELS: Record<string, { label: string; icon: string }> = {
   analytics: { label: 'Analytics & BI', icon: 'graph-up' },
   health: { label: 'Kesehatan', icon: 'hospital' },
   platform: { label: 'Platform', icon: 'rocket-takeoff' },
+  service: { label: 'Servis & Bengkel', icon: 'wrench-adjustable' },
+  property: { label: 'Properti', icon: 'house-door' },
+  ai: { label: 'AI & Teknologi', icon: 'cpu' },
+  transport: { label: 'Transportasi', icon: 'bus-front' },
 }
 
 // Affiliate Invite Banner -- ajakan gabung program affiliate, selalu tampil

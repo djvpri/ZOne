@@ -3,7 +3,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import AppIcon from '@/components/AppIcon'
-import { Tools, BoxArrowRight, BoxSeam, ShieldLock, CheckLg, Link45deg, PencilSquare, CheckCircleFill, Trash, Key, Building, Palette } from 'react-bootstrap-icons'
+import { Tools, BoxArrowRight, BoxSeam, ShieldLock, CheckLg, Link45deg, PencilSquare, CheckCircleFill, Trash, Key, Building, Palette, Grid3x3Gap } from 'react-bootstrap-icons'
 
 interface Tenant {
   id: string; name: string; plan?: string; active?: boolean; expires_at?: string | null; quota?: number
@@ -13,7 +13,7 @@ interface AppUser {
 }
 
 interface AppRow {
-  id: string; slug: string; name: string; icon?: string | null; url: string; isActive: boolean
+  id: string; slug: string; name: string; icon?: string | null; url: string; isActive: boolean; category?: string | null
 }
 
 const PLANS = ['starter', 'pro', 'enterprise']
@@ -430,6 +430,28 @@ export default function ManageContent() {
                 <Link45deg size={15} className="inline mr-1.5" />Buka {apps.find(a => a.slug === activeApp)!.name}
               </a>
             )}
+            <button
+              onClick={async () => {
+                const current = apps.find(a => a.slug === activeApp)!
+                const daftar = 'pos, hr, booking, finance, identity, analytics, health, platform, service, property, ai, transport'
+                const category = prompt(`Kategori untuk "${current.name}"\nPilihan: ${daftar}`, current.category || '')
+                if (!category) return
+                try {
+                  const res = await fetch('/api/admin/apps', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: current.id, category: category.trim().toLowerCase() }),
+                  })
+                  if (!res.ok) throw new Error((await res.json()).error || 'Gagal update kategori')
+                  flash('Kategori app diperbarui')
+                  fetchApps()
+                  fetchData(activeApp)
+                } catch (err: any) { setError(err.message) }
+              }}
+              className="text-blue-400 underline underline-offset-2"
+            >
+              <Grid3x3Gap size={14} className="inline mr-1.5" />Edit Kategori
+            </button>
             <button
               onClick={async () => {
                 const current = apps.find(a => a.slug === activeApp)!

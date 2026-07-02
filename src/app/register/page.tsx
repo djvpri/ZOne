@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { CheckCircleFill } from 'react-bootstrap-icons'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -86,7 +87,7 @@ export default function RegisterPage() {
           </form>
         ) : (
           <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 text-center">
-            <div className="text-4xl mb-4">✅</div>
+            <CheckCircleFill size={40} className="mb-4 mx-auto text-emerald-500" />
             <h2 className="text-lg font-bold mb-2">Berhasil Daftar!</h2>
             <p className="text-sm text-slate-400 mb-6">Akun kamu sudah aktif. Login sekarang.</p>
             <Link href="/login"

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { InstallPrompt } from '../pwa-register'
 import AppIcon from '@/components/AppIcon'
+import { CameraFill, PersonCircle, CashCoin, GearFill, BoxArrowRight, HouseDoorFill, CheckCircleFill, XLg, Wallet2, CashStack } from 'react-bootstrap-icons'
 
 type App = {
   id: string; slug: string; name: string; description: string | null
@@ -57,7 +58,7 @@ function AffiliateInviteBanner() {
       <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-xl p-4 text-white hover:from-amber-400 hover:to-orange-500 transition-all">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-bold mb-1">💸 Jadi Affiliate, Ajak Pengguna Baru!</div>
+            <div className="text-sm font-bold mb-1 flex items-center gap-1.5"><CashStack size={15} /> Jadi Affiliate, Ajak Pengguna Baru!</div>
             <div className="text-xs opacity-90 mb-2">
               Dapatkan komisi minimal Rp 50.000/bulan untuk setiap member aktif yang kamu ajak.
             </div>
@@ -67,7 +68,7 @@ function AffiliateInviteBanner() {
                 onClick={handleCopy}
                 className="text-xs font-semibold bg-white/20 hover:bg-white/30 rounded px-2 py-1 transition-colors"
               >
-                {copied ? '✓ Tersalin' : 'Salin Kode'}
+                {copied ? (<><CheckCircleFill size={13} className="inline mr-1" />Tersalin</>) : 'Salin Kode'}
               </button>
               <a
                 href={`https://wa.me/?text=${waText}`}
@@ -119,7 +120,7 @@ function AffiliateBalanceWidget() {
       <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl p-4 text-white hover:from-green-500 hover:to-emerald-500 transition-all">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-xs opacity-80 mb-1">💰 Saldo Affiliate</div>
+            <div className="text-xs opacity-80 mb-1 flex items-center gap-1.5"><Wallet2 size={13} /> Saldo Affiliate</div>
             <div className="text-2xl font-bold">{formatRupiah(balance)}</div>
           </div>
           <div className="text-2xl opacity-80">→</div>
@@ -180,7 +181,7 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, action: 'approve' }),
       })
-      if (res2.ok) { setQrScanStatus('success'); setQrMsg('✅ Login berhasil! Komputer sudah bisa masuk.') }
+      if (res2.ok) { setQrScanStatus('success'); setQrMsg('Login berhasil! Komputer sudah bisa masuk.') }
       else { setQrScanStatus('error'); setQrMsg('Gagal approve QR') }
     } catch { setQrScanStatus('error'); setQrMsg('Gagal menghubungi server') }
   }, [])
@@ -280,24 +281,24 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <button onClick={() => setShowQrScanner(true)}
               className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors text-lg" title="Scan QR Login">
-              📷
+              <CameraFill size={18} />
             </button>
             <a href="/profile" className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors text-lg" title="Profil">
-              👤
+              <PersonCircle size={18} />
             </a>
             {user.role === 'ADMIN' && (
               <a href="/affiliate" className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors text-lg" title="Affiliate">
-                💰
+                <CashCoin size={18} />
               </a>
             )}
             {user.role === 'ADMIN' && (
               <a href="/manage" className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors text-lg" title="Admin">
-                ⚙️
+                <GearFill size={18} />
               </a>
             )}
             <button onClick={() => signOut({ callbackUrl: '/login' })}
               className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors text-lg">
-              🚪
+              <BoxArrowRight size={18} />
             </button>
           </div>
         </div>
@@ -419,24 +420,24 @@ export default function DashboardPage() {
       <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 z-30 pb-safe">
         <div className="flex items-center justify-around py-2">
           <a href="/dashboard" className="flex flex-col items-center gap-1 px-4 py-1 text-blue-400">
-            <span className="text-xl">🏠</span>
+            <HouseDoorFill size={20} />
             <span className="text-[10px] font-medium">Beranda</span>
           </a>
           <a href="/affiliate" className="flex flex-col items-center gap-1 px-4 py-1 text-slate-400">
-            <span className="text-xl">💰</span>
+            <CashCoin size={20} />
             <span className="text-[10px] font-medium">Affiliate</span>
           </a>
           <button onClick={() => setShowQrScanner(true)} className="flex flex-col items-center gap-1 px-4 py-1 text-slate-400">
-            <span className="text-xl">📷</span>
+            <CameraFill size={20} />
             <span className="text-[10px] font-medium">Scan QR</span>
           </button>
           <a href="/profile" className="flex flex-col items-center gap-1 px-4 py-1 text-slate-400">
-            <span className="text-xl">👤</span>
+            <PersonCircle size={20} />
             <span className="text-[10px] font-medium">Profil</span>
           </a>
           {user.role === 'ADMIN' && (
             <a href="/manage" className="flex flex-col items-center gap-1 px-4 py-1 text-slate-400">
-              <span className="text-xl">⚙️</span>
+              <GearFill size={20} />
               <span className="text-[10px] font-medium">Admin</span>
             </a>
           )}
@@ -450,13 +451,13 @@ export default function DashboardPage() {
         <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-4" onClick={closeQrScanner}>
           <div onClick={e => e.stopPropagation()} className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b border-slate-800">
-              <h3 className="font-bold text-white">📷 Scan QR Login</h3>
-              <button onClick={closeQrScanner} className="text-slate-400 hover:text-white text-xl">✕</button>
+              <h3 className="font-bold text-white flex items-center gap-1.5"><CameraFill size={16} /> Scan QR Login</h3>
+              <button onClick={closeQrScanner} className="text-slate-400 hover:text-white"><XLg size={18} /></button>
             </div>
 
             {qrScanStatus === 'success' ? (
               <div className="text-center py-10 px-4">
-                <div className="text-5xl mb-3">✅</div>
+                <CheckCircleFill size={48} className="mb-3 mx-auto text-emerald-500" />
                 <p className="text-green-400 font-medium">{qrMsg}</p>
                 <button onClick={closeQrScanner} className="mt-4 bg-slate-800 text-slate-300 text-sm px-4 py-2 rounded-xl">Tutup</button>
               </div>

@@ -3,6 +3,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import AppIcon from '@/components/AppIcon'
+import { Tools, BoxArrowRight, BoxSeam, ShieldLock, CheckLg, Link45deg, PencilSquare, CheckCircleFill, Trash, Key, Building } from 'react-bootstrap-icons'
 
 interface Tenant {
   id: string; name: string; plan?: string; active?: boolean; expires_at?: string | null; quota?: number
@@ -337,8 +338,8 @@ export default function ManageContent() {
       <header className="border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-md sticky top-0 z-20 pt-safe">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <button onClick={() => router.push('/dashboard')} className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white">←</button>
-          <h1 className="font-bold">🛠️ Kelola Apps</h1>
-          <button onClick={() => signOut({ callbackUrl: '/login' })} className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white">🚪</button>
+          <h1 className="font-bold flex items-center gap-2"><Tools size={17} /> Kelola Apps</h1>
+          <button onClick={() => signOut({ callbackUrl: '/login' })} className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"><BoxArrowRight size={18} /></button>
         </div>
       </header>
 
@@ -349,11 +350,11 @@ export default function ManageContent() {
         <div className="flex gap-1 mb-4 bg-slate-800/30 p-1 rounded-xl">
           <button onClick={() => setView('apps')}
             className={`flex-1 text-xs font-semibold py-2 rounded-lg transition ${view === 'apps' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>
-            📦 Kelola Per-App
+            <BoxSeam size={14} className="inline mr-1.5" />Kelola Per-App
           </button>
           <button onClick={() => setView('access')}
             className={`flex-1 text-xs font-semibold py-2 rounded-lg transition ${view === 'access' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>
-            🔐 Akses User
+            <ShieldLock size={14} className="inline mr-1.5" />Akses User
           </button>
         </div>
 
@@ -389,7 +390,7 @@ export default function ManageContent() {
                               isOn ? 'bg-green-500/15 text-green-400 border-green-500/30' : 'bg-slate-800 text-slate-500 border-slate-700'
                             }`}>
                             <AppIcon name={a.icon || 'box-seam'} size={16} />{a.name}
-                            {accessSaving === key ? '…' : (isOn ? ' ✓' : '')}
+                            {accessSaving === key ? '…' : (isOn ? (<CheckLg size={12} className="inline" />) : '')}
                           </button>
                         )
                       })}
@@ -426,7 +427,7 @@ export default function ManageContent() {
             {apps.find(a => a.slug === activeApp)!.url !== '#' && (
               <a href={apps.find(a => a.slug === activeApp)!.url} target="_blank" rel="noopener noreferrer"
                 className="text-blue-400 underline underline-offset-2">
-                🔗 Buka {apps.find(a => a.slug === activeApp)!.name}
+                <Link45deg size={15} className="inline mr-1.5" />Buka {apps.find(a => a.slug === activeApp)!.name}
               </a>
             )}
             <button
@@ -448,7 +449,7 @@ export default function ManageContent() {
               }}
               className="text-blue-400 underline underline-offset-2"
             >
-              ✏️ Edit URL
+              <PencilSquare size={14} className="inline mr-1.5" />Edit URL
             </button>
           </div>
         )}
@@ -521,12 +522,12 @@ export default function ManageContent() {
                       {t.active === false ? (
                         <button onClick={() => handleReactivateTenant(t.id, t.name)}
                           className="text-[10px] px-2 py-1 bg-green-500/10 text-green-400 border border-green-500/20 rounded-lg">
-                          ✅ Aktifkan Tenant
+                          <CheckCircleFill size={13} className="inline mr-1.5" />Aktifkan Tenant
                         </button>
                       ) : (
                         <button onClick={() => handleDeleteTenant(t.id, t.name)}
                           className="text-[10px] px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg">
-                          🗑️ Nonaktifkan Tenant
+                          <Trash size={13} className="inline mr-1.5" />Nonaktifkan Tenant
                         </button>
                       )}
                     </div>
@@ -553,9 +554,9 @@ export default function ManageContent() {
                           {u.name}
                           {u.active === false && <span className="text-[9px] px-1.5 py-0.5 bg-slate-700 text-slate-400 rounded-full flex-shrink-0">nonaktif</span>}
                         </div>
-                        <div className="text-[11px] text-slate-500 truncate">{u.email || (u.linked_email ? `🔑 ${u.linked_email}` : 'belum ada email')}</div>
+                        <div className="text-[11px] text-slate-500 truncate">{u.email || (u.linked_email ? (<><Key size={11} className="inline mr-1" />{u.linked_email}</>) : 'belum ada email')}</div>
                         <div className="text-[10px] text-blue-400/80 truncate">
-                          🏢 {u.tenantId ? (tenants.find(t => t.id === u.tenantId)?.name || 'Tenant tidak ditemukan') : 'Tanpa tenant'}
+                          <Building size={12} className="inline mr-1.5" />{u.tenantId ? (tenants.find(t => t.id === u.tenantId)?.name || 'Tenant tidak ditemukan') : 'Tanpa tenant'}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
@@ -571,12 +572,12 @@ export default function ManageContent() {
                           u.active === false ? (
                             <button onClick={() => handleReactivateUser(u.email, u.name)}
                               className="text-[10px] px-2 py-1 bg-green-500/10 text-green-400 border border-green-500/20 rounded-lg">
-                              ✅ Aktifkan
+                              <CheckCircleFill size={12} className="inline mr-1" />Aktifkan
                             </button>
                           ) : (
                             <button onClick={() => handleDeleteUser(u.email, u.name)}
                               className="text-[10px] px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg">
-                              🗑️ Nonaktifkan
+                              <Trash size={12} className="inline mr-1" />Nonaktifkan
                             </button>
                           )
                         )}

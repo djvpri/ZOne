@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { XLg } from 'react-bootstrap-icons'
 
 export function PWARegister() {
   useEffect(() => {
@@ -72,7 +73,7 @@ export function InstallPrompt() {
           </button>
           <button onClick={() => setShow(false)}
             className="text-slate-400 hover:text-white p-1">
-            ✕
+            <XLg size={14} />
           </button>
         </div>
       </div>

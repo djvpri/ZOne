@@ -2,6 +2,7 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { CashCoin, ClipboardData, Briefcase, CashStack, XLg } from 'react-bootstrap-icons'
 
 type AffiliatePartner = {
   id: string; name: string; type: 'MITRA_LAPANGAN' | 'CUSTOMER_REFERRAL'
@@ -97,7 +98,7 @@ export default function AffiliatePage() {
           <div className="flex items-center gap-3">
             <a href="/dashboard" className="text-slate-400 hover:text-white text-lg">←</a>
             <div>
-              <h1 className="font-bold text-lg leading-tight">💰 Affiliate</h1>
+              <h1 className="font-bold text-lg leading-tight flex items-center gap-1.5"><CashCoin size={17} /> Affiliate</h1>
               <p className="text-[11px] text-slate-400">Program Kemitraan</p>
             </div>
           </div>
@@ -138,7 +139,7 @@ export default function AffiliatePage() {
               rel="noopener noreferrer"
               className="block bg-green-600 hover:bg-green-500 text-white text-sm font-semibold text-center px-4 py-3 rounded-xl transition-colors"
             >
-              📋 Daftarkan User Baru via WhatsApp
+              <ClipboardData size={14} className="inline mr-1.5" />Daftarkan User Baru via WhatsApp
             </a>
             {myAffiliate.bankAccount && (
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
@@ -176,7 +177,7 @@ export default function AffiliatePage() {
         )}
         {!isAdmin && !myAffiliate && (
           <div className="text-center py-12">
-            <div className="text-5xl mb-4">💼</div>
+            <Briefcase size={44} className="mb-4 mx-auto text-slate-600" />
             <p className="text-slate-400">Anda belum terdaftar sebagai mitra affiliate</p>
           </div>
         )}
@@ -228,7 +229,7 @@ export default function AffiliatePage() {
                       className="flex-1 bg-green-600 hover:bg-green-500 text-white text-sm font-semibold px-3 py-2 rounded-lg">+ Komisi</button>
                     <button onClick={() => { setSelAff(a); setTxForm({ type: 'PAYOUT', amount: a.balance, notes: '' }); setShowTxModal(true) }}
                       disabled={Number(a.balance) <= 0}
-                      className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-3 py-2 rounded-lg">💸 Bayar</button>
+                      className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-3 py-2 rounded-lg flex items-center justify-center gap-1.5"><CashStack size={14} /> Bayar</button>
                   </div>
                   {a.transactions?.length ? (
                     <div className="mt-3 pt-3 border-t border-slate-800">
@@ -252,7 +253,7 @@ export default function AffiliatePage() {
               ))}
               {!affiliates.length && (
                 <div className="text-center py-12">
-                  <div className="text-5xl mb-4">💼</div>
+                  <Briefcase size={44} className="mb-4 mx-auto text-slate-600" />
                   <p className="text-slate-400 mb-4">Belum ada mitra affiliate</p>
                   <button onClick={async () => { const r = await fetch('/api/admin/users'); const d = await r.json(); setUsers(d.users || []); setShowCreateModal(true) }}
                     className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-6 py-3 rounded-lg">+ Tambah Mitra Pertama</button>
@@ -269,7 +270,7 @@ export default function AffiliatePage() {
           <div onClick={e => e.stopPropagation()} className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md">
             <div className="flex items-center justify-between p-4 border-b border-slate-800">
               <h3 className="font-bold text-white">Tambah Mitra Affiliate</h3>
-              <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-white text-xl">✕</button>
+              <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-white"><XLg size={18} /></button>
             </div>
             <form onSubmit={handleCreate} className="p-4 space-y-3">
               <div>
@@ -330,7 +331,7 @@ export default function AffiliatePage() {
           <div onClick={e => e.stopPropagation()} className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md">
             <div className="flex items-center justify-between p-4 border-b border-slate-800">
               <h3 className="font-bold text-white">{txForm.type === 'EARNED' ? 'Tambah Komisi' : 'Bayar Saldo'}</h3>
-              <button onClick={() => setShowTxModal(false)} className="text-slate-400 hover:text-white text-xl">✕</button>
+              <button onClick={() => setShowTxModal(false)} className="text-slate-400 hover:text-white"><XLg size={18} /></button>
             </div>
             <form onSubmit={handleTx} className="p-4 space-y-3">
               <div className="bg-slate-800 rounded-lg p-3 mb-3">

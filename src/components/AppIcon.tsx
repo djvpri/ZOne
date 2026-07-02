@@ -10,6 +10,7 @@ import {
   ClipboardCheck, PersonBoundingBox, Basket3, BusFront, Scissors,
   People, CalendarCheck, CashCoin, ShieldLock, GraphUp, Hospital,
   RocketTakeoff, BoxSeam, Cpu, QrCode, Bank, Grid, PersonBadge,
+  QuestionCircle,
 } from 'react-bootstrap-icons'
 import type { ComponentType } from 'react'
 
@@ -46,8 +47,11 @@ export default function AppIcon({ name, size = 24, color, className }: {
   const key = (name || '').trim().toLowerCase()
   const Icon = ICONS[key]
   if (Icon) return <Icon size={size} color={color} className={className} />
-  // Fallback: emoji lama / string bebas
-  return <span style={{ fontSize: size * 0.9, lineHeight: 1 }} className={className}>{name || '❓'}</span>
+  // Emoji lama dari DB yang belum di-seed ulang: render apa adanya (backward compatible)
+  if (name && /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(name)) {
+    return <span style={{ fontSize: size * 0.9, lineHeight: 1 }} className={className}>{name}</span>
+  }
+  return <QuestionCircle size={size} color={color} className={className} />
 }
 
 export const ICON_NAMES = Object.keys(ICONS)

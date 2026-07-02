@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import { ShieldLock, Phone, CheckCircleFill, XLg, XCircleFill, Clock, ExclamationCircleFill } from 'react-bootstrap-icons'
 
 type State = 'loading' | 'confirm' | 'approved' | 'cancelled' | 'expired' | 'error' | 'need_login'
 
@@ -70,7 +71,7 @@ export default function QrApproveClient() {
 
   if (state === 'need_login') return wrap(
     <>
-      <div className="text-4xl mb-4">🔐</div>
+      <ShieldLock size={40} className="mb-4 mx-auto text-slate-500" />
       <h2 className="font-bold text-lg mb-2">Perlu Login Dulu</h2>
       <p className="text-slate-400 text-sm mb-4">Login ke Z One di HP ini dulu, baru bisa approve QR.</p>
       <button onClick={() => router.push(`/login?callbackUrl=${encodeURIComponent(window.location.href)}`)}
@@ -82,25 +83,25 @@ export default function QrApproveClient() {
 
   if (state === 'confirm') return wrap(
     <>
-      <div className="text-4xl mb-4">📱</div>
+      <Phone size={40} className="mb-4 mx-auto text-blue-400" />
       <h2 className="font-bold text-lg mb-1">Konfirmasi Login</h2>
       <p className="text-slate-400 text-sm mb-1">Akun yang akan digunakan:</p>
       <p className="font-semibold text-blue-400 mb-1">{userName}</p>
       <p className="text-slate-500 text-xs mb-6">Login ini akan mengizinkan perangkat lain (komputer/laptop) masuk ke Z One menggunakan akun kamu.</p>
       <button onClick={handleApprove}
         className="w-full bg-green-600 hover:bg-green-500 text-white font-semibold py-3 rounded-xl mb-3">
-        ✅ Ya, Izinkan Login
+        <CheckCircleFill size={15} className="inline mr-1.5" />Ya, Izinkan Login
       </button>
       <button onClick={handleCancel}
         className="w-full bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold py-3 rounded-xl">
-        ✕ Tolak
+        <XLg size={14} className="inline mr-1.5" />Tolak
       </button>
     </>
   )
 
   if (state === 'approved') return wrap(
     <>
-      <div className="text-5xl mb-4">✅</div>
+      <CheckCircleFill size={48} className="mb-4 mx-auto text-emerald-500" />
       <h2 className="font-bold text-lg mb-2">Login Berhasil!</h2>
       <p className="text-slate-400 text-sm">Perangkat lain sudah masuk ke Z One. Halaman ini bisa ditutup.</p>
     </>
@@ -108,7 +109,7 @@ export default function QrApproveClient() {
 
   if (state === 'cancelled') return wrap(
     <>
-      <div className="text-5xl mb-4">✕</div>
+      <XCircleFill size={48} className="mb-4 mx-auto text-slate-500" />
       <h2 className="font-bold text-lg mb-2">Login Ditolak</h2>
       <p className="text-slate-400 text-sm">Permintaan login dibatalkan. Halaman ini bisa ditutup.</p>
     </>
@@ -116,7 +117,7 @@ export default function QrApproveClient() {
 
   if (state === 'expired') return wrap(
     <>
-      <div className="text-5xl mb-4">⏱️</div>
+      <Clock size={48} className="mb-4 mx-auto text-amber-500" />
       <h2 className="font-bold text-lg mb-2">QR Kedaluwarsa</h2>
       <p className="text-slate-400 text-sm">QR code sudah tidak berlaku. Minta QR baru di komputer.</p>
     </>
@@ -124,7 +125,7 @@ export default function QrApproveClient() {
 
   return wrap(
     <>
-      <div className="text-5xl mb-4">❌</div>
+      <ExclamationCircleFill size={48} className="mb-4 mx-auto text-red-500" />
       <h2 className="font-bold text-lg mb-2">Terjadi Kesalahan</h2>
       <p className="text-slate-400 text-sm">QR tidak valid atau sudah digunakan.</p>
     </>

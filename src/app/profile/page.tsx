@@ -2,6 +2,7 @@
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { CheckCircleFill, XCircleFill, CameraFill, ArrowClockwise, Trash, Lock, BoxArrowRight } from 'react-bootstrap-icons'
 
 export default function ProfilePage() {
   const { data: session, status, update } = useSession()
@@ -97,7 +98,7 @@ export default function ProfilePage() {
 
       if (!linkRes.ok) throw new Error(linkData.error || 'Gagal link wajah')
 
-      setSuccess('✓ Wajah berhasil didaftarkan!')
+      setSuccess('Wajah berhasil didaftarkan!')
       setFaceStatus('')
       await update()
     } catch (err) {
@@ -125,7 +126,7 @@ export default function ProfilePage() {
 
       if (!res.ok) throw new Error(data.error || 'Gagal menghapus wajah')
 
-      setSuccess('✓ Wajah berhasil dihapus')
+      setSuccess('Wajah berhasil dihapus')
       await update()
     } catch (err) {
       setError((err as Error).message)
@@ -150,7 +151,7 @@ export default function ProfilePage() {
 
       if (!res.ok) throw new Error(data.error || 'Gagal ganti password')
 
-      setSuccess('✓ Password berhasil diganti')
+      setSuccess('Password berhasil diganti')
       setCurrentPassword('')
       setNewPassword('')
     } catch (err) {
@@ -203,7 +204,7 @@ export default function ProfilePage() {
             </div>
             <div className="bg-slate-800/50 rounded-xl p-3">
               <div className="text-slate-400 text-xs mb-1">Wajah</div>
-              <div className="font-medium">{user.faceId ? '✅ Terdaftar' : '❌ Belum'}</div>
+              <div className="font-medium flex items-center gap-1.5">{user.faceId ? (<><CheckCircleFill size={13} className="text-emerald-500" />Terdaftar</>) : (<><XCircleFill size={13} className="text-slate-500" />Belum</>)}</div>
             </div>
             <div className="bg-slate-800/50 rounded-xl p-3">
               <div className="text-slate-400 text-xs mb-1">Status</div>
@@ -214,7 +215,7 @@ export default function ProfilePage() {
 
         {/* Face Management */}
         <div className="bg-slate-900/80 border border-slate-700/50 rounded-2xl p-5">
-          <h3 className="text-white font-bold mb-4">📷 Pengaturan Wajah</h3>
+          <h3 className="text-white font-bold mb-4 flex items-center gap-2"><CameraFill size={16} /> Pengaturan Wajah</h3>
 
           {faceStatus && (
             <div className="relative aspect-video bg-slate-800 rounded-xl overflow-hidden mb-4">
@@ -233,11 +234,11 @@ export default function ProfilePage() {
               <div className="flex gap-3">
                 <button onClick={handleCaptureFace} disabled={faceLoading}
                   className="flex-1 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-medium rounded-xl px-4 py-3 transition-colors text-sm active:scale-[0.98]">
-                  {faceLoading ? 'Memproses...' : '🔄 Update'}
+                  {faceLoading ? 'Memproses...' : (<><ArrowClockwise size={13} className="inline mr-1" />Update</>)}
                 </button>
                 <button onClick={handleUnlinkFace} disabled={faceLoading}
                   className="flex-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 font-medium rounded-xl px-4 py-3 transition-colors text-sm border border-red-500/20 active:scale-[0.98]">
-                  🗑️ Hapus
+                  <Trash size={13} className="inline mr-1" />Hapus
                 </button>
               </div>
             </div>
@@ -246,7 +247,7 @@ export default function ProfilePage() {
               <p className="text-sm text-slate-400">Daftarkan wajah untuk login cepat.</p>
               <button onClick={handleCaptureFace} disabled={faceLoading}
                 className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-medium rounded-xl px-4 py-3 transition-colors active:scale-[0.98]">
-                {faceLoading ? faceStatus || 'Memproses...' : '📷 Daftarkan Wajah'}
+                {faceLoading ? faceStatus || 'Memproses...' : (<><CameraFill size={14} className="inline mr-1.5" />Daftarkan Wajah</>)}
               </button>
             </div>
           )}
@@ -254,7 +255,7 @@ export default function ProfilePage() {
 
         {/* Change Password */}
         <div className="bg-slate-900/80 border border-slate-700/50 rounded-2xl p-5">
-          <h3 className="text-white font-bold mb-4">🔒 Ganti Password</h3>
+          <h3 className="text-white font-bold mb-4 flex items-center gap-2"><Lock size={16} /> Ganti Password</h3>
           <form onSubmit={handleChangePassword} className="space-y-3">
             <input type="password" required placeholder="Password saat ini" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
@@ -270,7 +271,7 @@ export default function ProfilePage() {
         {/* Logout */}
         <button onClick={() => signOut({ callbackUrl: '/login' })}
           className="w-full bg-slate-800 hover:bg-slate-700 text-red-400 font-medium rounded-xl px-4 py-3 transition-colors active:scale-[0.98]">
-          🚪 Keluar
+          <BoxArrowRight size={15} className="inline mr-1.5" />Keluar
         </button>
       </main>
     </div>

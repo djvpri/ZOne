@@ -474,6 +474,9 @@ export default function LoginPage() {
         <p className="mt-6 text-center text-xs text-slate-600">
           v1.0 · Z One Platform
         </p>
+        <p className="mt-2 text-center text-[10px] text-slate-700">
+          © {new Date().getFullYear()} PT Zomet Teknologi Indonesia
+        </p>
       </div>
     </div>
   )

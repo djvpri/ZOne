@@ -1,0 +1,53 @@
+'use client'
+// Ikon ekosistem Zomet — Bootstrap Icons (https://icons.getbootstrap.com)
+// via react-bootstrap-icons (per-ikon, tree-shakeable).
+//
+// Kolom `icon` di tabel App berisi NAMA ikon bootstrap (mis. "bus-front").
+// Fallback: kalau nama tidak dikenal (mis. masih emoji lama di DB),
+// string dirender apa adanya — backward compatible tanpa migrasi paksa.
+import {
+  Shop, Gem, CupHot, WrenchAdjustable, HeartPulse, HouseDoor,
+  ClipboardCheck, PersonBoundingBox, Basket3, BusFront, Scissors,
+  People, CalendarCheck, CashCoin, ShieldLock, GraphUp, Hospital,
+  RocketTakeoff, BoxSeam, Cpu, QrCode, Bank, Grid, PersonBadge,
+} from 'react-bootstrap-icons'
+import type { ComponentType } from 'react'
+
+const ICONS: Record<string, ComponentType<{ size?: number; className?: string; color?: string }>> = {
+  'shop': Shop,
+  'gem': Gem,
+  'cup-hot': CupHot,
+  'wrench-adjustable': WrenchAdjustable,
+  'heart-pulse': HeartPulse,
+  'house-door': HouseDoor,
+  'clipboard-check': ClipboardCheck,
+  'person-bounding-box': PersonBoundingBox,
+  'basket3': Basket3,
+  'bus-front': BusFront,
+  'scissors': Scissors,
+  'people': People,
+  'calendar-check': CalendarCheck,
+  'cash-coin': CashCoin,
+  'shield-lock': ShieldLock,
+  'graph-up': GraphUp,
+  'hospital': Hospital,
+  'rocket-takeoff': RocketTakeoff,
+  'box-seam': BoxSeam,
+  'cpu': Cpu,
+  'qr-code': QrCode,
+  'bank': Bank,
+  'grid': Grid,
+  'person-badge': PersonBadge,
+}
+
+export default function AppIcon({ name, size = 24, color, className }: {
+  name?: string | null; size?: number; color?: string; className?: string
+}) {
+  const key = (name || '').trim().toLowerCase()
+  const Icon = ICONS[key]
+  if (Icon) return <Icon size={size} color={color} className={className} />
+  // Fallback: emoji lama / string bebas
+  return <span style={{ fontSize: size * 0.9, lineHeight: 1 }} className={className}>{name || '❓'}</span>
+}
+
+export const ICON_NAMES = Object.keys(ICONS)

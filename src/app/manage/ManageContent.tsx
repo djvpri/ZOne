@@ -2,6 +2,7 @@
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
+import AppIcon from '@/components/AppIcon'
 
 interface Tenant {
   id: string; name: string; plan?: string; active?: boolean; expires_at?: string | null; quota?: number
@@ -32,7 +33,7 @@ export default function ManageContent() {
   const [appsLoading, setAppsLoading] = useState(true)
   const [activeApp, setActiveApp] = useState('')
   const [showAddApp, setShowAddApp] = useState(false)
-  const [newApp, setNewApp] = useState({ slug: '', name: '', url: '', icon: '📦' })
+  const [newApp, setNewApp] = useState({ slug: '', name: '', url: '', icon: 'box-seam' })
   const [appFormLoading, setAppFormLoading] = useState(false)
   const [tenants, setTenants] = useState<Tenant[]>([])
   const [users, setUsers] = useState<AppUser[]>([])
@@ -163,7 +164,7 @@ export default function ManageContent() {
       if (!res.ok) throw new Error(result.error || 'Gagal menambah app')
       flash(`App "${newApp.name}" ditambahkan`)
       setShowAddApp(false)
-      setNewApp({ slug: '', name: '', url: '', icon: '📦' })
+      setNewApp({ slug: '', name: '', url: '', icon: 'box-seam' })
       const apps2 = await (await fetch('/api/admin/apps')).json()
       setApps(apps2.apps || [])
       setActiveApp(result.app.slug)
@@ -387,7 +388,7 @@ export default function ManageContent() {
                             className={`flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border transition disabled:opacity-50 ${
                               isOn ? 'bg-green-500/15 text-green-400 border-green-500/30' : 'bg-slate-800 text-slate-500 border-slate-700'
                             }`}>
-                            <span>{a.icon || '📦'}</span>{a.name}
+                            <AppIcon name={a.icon || 'box-seam'} size={16} />{a.name}
                             {accessSaving === key ? '…' : (isOn ? ' ✓' : '')}
                           </button>
                         )
@@ -408,7 +409,7 @@ export default function ManageContent() {
               {apps.map(a => (
                 <button key={a.slug} onClick={() => { setActiveApp(a.slug); setError(''); setSuccess('') }}
                   className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-lg transition ${activeApp === a.slug ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
-                  <span>{a.icon || '📦'}</span>{a.name}
+                  <AppIcon name={a.icon || 'box-seam'} size={16} />{a.name}
                   {a.url === '#' && <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full" title="URL belum diisi" />}
                 </button>
               ))}
@@ -648,7 +649,7 @@ export default function ManageContent() {
               <input required type="url" placeholder="https://zkasir-production.up.railway.app" value={newApp.url}
                 onChange={e => setNewApp({ ...newApp, url: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm placeholder:text-slate-500" />
-              <input placeholder="Emoji icon (opsional, mis. 🛒)" value={newApp.icon}
+              <input placeholder="Nama ikon Bootstrap (mis. scissors, bus-front)" value={newApp.icon}
                 onChange={e => setNewApp({ ...newApp, icon: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm placeholder:text-slate-500" />
               <p className="text-[11px] text-slate-500">

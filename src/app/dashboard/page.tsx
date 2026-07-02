@@ -3,6 +3,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { InstallPrompt } from '../pwa-register'
+import AppIcon from '@/components/AppIcon'
 
 type App = {
   id: string; slug: string; name: string; description: string | null
@@ -14,14 +15,14 @@ type UserApp = { app: App; active: boolean }
 const SSO_ENABLED_SLUGS = new Set(['zface', 'zpos', 'zresto', 'zlaundry', 'zgold', 'zbengkel', 'zmedics', 'zabsen', 'zrooms', 'z-rooms', 'zbilliar', 'zgym', 'ztrans'])
 
 const CATEGORY_LABELS: Record<string, { label: string; icon: string }> = {
-  pos: { label: 'Point of Sale', icon: '🏪' },
-  hr: { label: 'Human Resources', icon: '👥' },
-  booking: { label: 'Booking & Reservasi', icon: '📅' },
-  finance: { label: 'Keuangan & Investasi', icon: '💰' },
-  identity: { label: 'Identitas & Keamanan', icon: '🔐' },
-  analytics: { label: 'Analytics & BI', icon: '📊' },
-  health: { label: 'Kesehatan', icon: '🏥' },
-  platform: { label: 'Platform', icon: '🚀' },
+  pos: { label: 'Point of Sale', icon: 'shop' },
+  hr: { label: 'Human Resources', icon: 'people' },
+  booking: { label: 'Booking & Reservasi', icon: 'calendar-check' },
+  finance: { label: 'Keuangan & Investasi', icon: 'cash-coin' },
+  identity: { label: 'Identitas & Keamanan', icon: 'shield-lock' },
+  analytics: { label: 'Analytics & BI', icon: 'graph-up' },
+  health: { label: 'Kesehatan', icon: 'hospital' },
+  platform: { label: 'Platform', icon: 'rocket-takeoff' },
 }
 
 // Affiliate Invite Banner -- ajakan gabung program affiliate, selalu tampil
@@ -333,11 +334,11 @@ export default function DashboardPage() {
 
         {/* Apps by category */}
         {Object.entries(grouped).map(([cat, items]) => {
-          const catInfo = CATEGORY_LABELS[cat] || { label: cat, icon: '📦' }
+          const catInfo = CATEGORY_LABELS[cat] || { label: cat, icon: 'box-seam' }
           return (
             <div key={cat} className="mb-6">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg">{catInfo.icon}</span>
+                <AppIcon name={catInfo.icon} size={18} className="text-gray-500" />
                 <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{catInfo.label}</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -348,9 +349,9 @@ export default function DashboardPage() {
                   const cardClass = `group block bg-slate-900 border border-slate-800 rounded-xl p-4 transition-all ${clickable ? 'active:scale-[0.98] hover:border-slate-600 hover:bg-slate-800/50' : 'opacity-50 cursor-not-allowed'}`
                   const inner = (
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
                         style={{ backgroundColor: ua.app.color + '20' }}>
-                        {ua.app.icon}
+                        <AppIcon name={ua.app.icon} size={24} color={ua.app.color} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">

@@ -24,20 +24,8 @@ async function seed() {
     })
     console.log('✓', app.slug)
   }
-
-  // Link semua app ke semua user
-  const users = await p.user.findMany({ select: { id: true } })
-  const apps = await p.app.findMany({ select: { id: true } })
-  for (const user of users) {
-    for (const app of apps) {
-      await p.userApp.upsert({
-        where: { userId_appId: { userId: user.id, appId: app.id } },
-        update: {},
-        create: { userId: user.id, appId: app.id, active: true },
-      }).catch(() => {})
-    }
-  }
-  console.log('Linked', users.length, 'users to', apps.length, 'apps ✓')
+  console.log('Selesai. Akses per-user TIDAK diberikan otomatis — atur lewat')
+  console.log('/manage > Akses User untuk tiap user yang perlu.')
 }
 
 seed().catch(e => console.error(e)).finally(() => p.$disconnect())

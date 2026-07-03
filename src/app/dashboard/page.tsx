@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { InstallPrompt } from '../pwa-register'
 import AppIcon from '@/components/AppIcon'
-import { CameraFill, PersonCircle, CashCoin, GearFill, BoxArrowRight, HouseDoorFill, CheckCircleFill, XLg, Wallet2, CashStack } from 'react-bootstrap-icons'
+import { CameraFill, PersonCircle, CashCoin, GearFill, BoxArrowRight, HouseDoorFill, CheckCircleFill, XLg, Wallet2, CashStack, Whatsapp } from 'react-bootstrap-icons'
 
 type App = {
   id: string; slug: string; name: string; description: string | null
@@ -526,6 +526,22 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Floating WhatsApp button */}
+      <a
+        href="https://wa.me/6282153533164?text=Halo%2C%20saya%20ingin%20tahu%20lebih%20lanjut%20tentang%20Zomet"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Chat via WhatsApp"
+        className="group fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-50 flex items-center gap-0 rounded-full bg-[#25D366] text-white shadow-lg shadow-black/30 transition-all duration-300 hover:gap-3 hover:pr-5 hover:shadow-xl active:scale-95"
+      >
+        <span className="grid h-14 w-14 shrink-0 place-items-center">
+          <Whatsapp size={26} className="animate-[pulse_2.5s_ease-in-out_infinite]" />
+        </span>
+        <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm font-semibold opacity-0 transition-all duration-300 group-hover:max-w-xs group-hover:opacity-100">
+          Chat via WhatsApp
+        </span>
+      </a>
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import 'bootstrap-icons/font/bootstrap-icons.css'
 import { Providers } from './providers'
 import { PWARegister } from './pwa-register'
 

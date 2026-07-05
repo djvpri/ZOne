@@ -3,7 +3,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
-import { Stars, Key, Camera, Phone, CheckCircleFill, Clock, ArrowRepeat } from 'react-bootstrap-icons'
+import { Stars, Key, Camera, Phone, CheckCircleFill, Clock, ArrowRepeat, ExclamationTriangle } from 'react-bootstrap-icons'
 
 type LoginMode = 'password' | 'face' | 'qr'
 
@@ -287,6 +287,15 @@ export default function LoginPage() {
             className={`flex-1 py-3 text-sm font-medium rounded-lg transition-all ${!isLogin ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
             Daftar
           </button>
+        </div>
+
+        {/* Maintenance banner */}
+        <div className="mb-4 bg-amber-500/15 border border-amber-500/30 text-amber-300 text-sm rounded-xl px-4 py-3 flex items-start gap-2">
+          <ExclamationTriangle size={18} className="shrink-0 mt-0.5" />
+          <div>
+            <strong className="block mb-0.5">Sedang Pemeliharaan</strong>
+            <span>Sistem sedang dalam pemeliharaan. Beberapa fitur mungkin tidak dapat diakses. Terima kasih atas pengertian Anda.</span>
+          </div>
         </div>
 
         {error && (

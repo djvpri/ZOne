@@ -313,9 +313,9 @@ export default function ManageContent() {
     setError('')
     try {
       await call('create', {
-        name: newUser.name, email: newUser.email, password: newUser.password,
+        name: newUser.name, password: newUser.password,
         tenantId: newUser.tenantId || undefined,
-      })
+      }, newUser.email)
       flash(`User "${newUser.name}" ditambahkan`)
       setShowAddUser(false)
       setNewUser({ name: '', email: '', password: '', tenantId: '' })

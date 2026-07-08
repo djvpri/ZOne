@@ -30,6 +30,13 @@ async function migrate() {
   await run(`CREATE INDEX IF NOT EXISTS "CommissionTransaction_affiliatePartnerId_idx" ON "CommissionTransaction"("affiliatePartnerId")`)
   await run(`CREATE INDEX IF NOT EXISTS "CommissionTransaction_createdAt_idx" ON "CommissionTransaction"("createdAt")`)
 
+  // Pengaturan situs (maintenance mode, pengumuman, dll)
+  // Satu baris per key — idempoten, aman dijalankan berulang.
+  await run(`CREATE TABLE IF NOT EXISTS "SiteSettings" (key TEXT PRIMARY KEY, value TEXT NOT NULL, "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedBy" TEXT)`)
+  // Seed default maintenance = false kalau belum ada
+  await run(`INSERT INTO "SiteSettings" (key, value, "updatedAt") VALUES ('maintenance_enabled', 'false', now()) ON CONFLICT (key) DO NOTHING`)
+  await run(`INSERT INTO "SiteSettings" (key, value, "updatedAt") VALUES ('maintenance_message', 'Sistem sedang dalam pemeliharaan. Beberapa fitur mungkin tidak dapat diakses. Terima kasih atas pengertian Anda.', now()) ON CONFLICT (key) DO NOTHING`)
+
   console.log('Migrations done ✓')
 }
 

@@ -49,6 +49,35 @@ export default function ManageContent() {
 
   const isAdmin = (session?.user as any)?.role === 'ADMIN'
 
+  // Maintenance settings
+  const [maintenance, setMaintenance] = useState({ enabled: false, message: '' })
+  const [maintenanceSaving, setMaintenanceSaving] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(d => {
+        setMaintenance({
+          enabled: d.settings?.maintenance_enabled === 'true',
+          message: d.settings?.maintenance_message || '',
+        })
+      })
+      .catch(() => {})
+  }, [])
+
+  async function simpanSetting(key: string, value: string) {
+    setMaintenanceSaving(true)
+    try {
+      await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, value }),
+      })
+    } finally {
+      setMaintenanceSaving(false)
+    }
+  }
+
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
     if (status === 'authenticated' && !isAdmin) router.push('/dashboard')
@@ -346,6 +375,45 @@ export default function ManageContent() {
       <main className="max-w-3xl mx-auto px-4 py-5 pb-24">
         {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl px-4 py-3 mb-4 cursor-pointer" onClick={() => setError('')}>{error}</div>}
         {success && <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-sm rounded-xl px-4 py-3 mb-4">{success}</div>}
+
+        {/* Maintenance Toggle */}
+        <div className="mb-5 bg-slate-800/40 border border-slate-700/40 rounded-2xl p-4">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <p className="text-sm font-semibold">Mode Pemeliharaan</p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Banner kuning akan muncul di halaman login saat aktif
+              </p>
+            </div>
+            {/* Toggle switch */}
+            <button
+              onClick={async () => {
+                const baru = !maintenance.enabled
+                setMaintenance(prev => ({ ...prev, enabled: baru }))
+                await simpanSetting('maintenance_enabled', String(baru))
+                setSuccess(baru ? '⚠️ Mode pemeliharaan diaktifkan' : '✓ Mode pemeliharaan dinonaktifkan')
+                setTimeout(() => setSuccess(''), 3000)
+              }}
+              disabled={maintenanceSaving}
+              className={`relative w-12 h-6 rounded-full transition-colors duration-200 shrink-0 ${maintenance.enabled ? 'bg-yellow-500' : 'bg-slate-600'} disabled:opacity-50`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${maintenance.enabled ? 'translate-x-6' : 'translate-x-0'}`} />
+            </button>
+          </div>
+          {/* Pesan kustom */}
+          <div>
+            <label className="text-xs text-slate-400 block mb-1.5">Pesan pemeliharaan (opsional)</label>
+            <textarea
+              value={maintenance.message}
+              onChange={e => setMaintenance(prev => ({ ...prev, message: e.target.value }))}
+              onBlur={() => simpanSetting('maintenance_message', maintenance.message)}
+              rows={2}
+              placeholder="Sistem sedang dalam pemeliharaan..."
+              className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-yellow-500/50 resize-none"
+            />
+            <p className="text-[10px] text-slate-500 mt-1">Tersimpan otomatis saat kursor meninggalkan kolom</p>
+          </div>
+        </div>
 
         <div className="flex gap-1 mb-4 bg-slate-800/30 p-1 rounded-xl">
           <button onClick={() => setView('apps')}

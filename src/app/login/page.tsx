@@ -36,6 +36,21 @@ export default function LoginPage() {
   const [regPhone, setRegPhone] = useState('')
   const [regPassword, setRegPassword] = useState('')
 
+  // Maintenance banner
+  const [maintenance, setMaintenance] = useState<{ enabled: boolean; message: string } | null>(null)
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(d => {
+        setMaintenance({
+          enabled: d.settings?.maintenance_enabled === 'true',
+          message: d.settings?.maintenance_message || '',
+        })
+      })
+      .catch(() => {})
+  }, [])
+
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(t => t.stop())
@@ -276,6 +291,19 @@ export default function LoginPage() {
           <h1 className="text-xl font-bold">Z One</h1>
           <p className="text-sm text-slate-400 mt-1">Ekosistem Digital</p>
         </div>
+
+        {/* Banner Maintenance */}
+        {maintenance?.enabled && (
+          <div className="mb-5 flex gap-3 items-start bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-3">
+            <span className="text-yellow-400 mt-0.5 shrink-0">⚠️</span>
+            <div>
+              <p className="text-sm font-semibold text-yellow-400">Sedang Pemeliharaan</p>
+              {maintenance.message && (
+                <p className="text-xs text-yellow-300/80 mt-0.5">{maintenance.message}</p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-1 mb-5 bg-slate-800/50 p-1 rounded-xl">

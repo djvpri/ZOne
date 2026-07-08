@@ -3,7 +3,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import AppIcon from '@/components/AppIcon'
-import { Tools, BoxArrowRight, BoxSeam, ShieldLock, CheckLg, Link45deg, PencilSquare, CheckCircleFill, Trash, Key, Building, Palette, Grid3x3Gap } from 'react-bootstrap-icons'
+import { Tools, BoxArrowRight, BoxSeam, ShieldLock, CheckLg, Link45deg, PencilSquare, CheckCircleFill, Trash, Key, Building, Palette, Grid3x3Gap, CardText } from 'react-bootstrap-icons'
 
 interface Tenant {
   id: string; name: string; plan?: string; active?: boolean; expires_at?: string | null; quota?: number
@@ -13,7 +13,7 @@ interface AppUser {
 }
 
 interface AppRow {
-  id: string; slug: string; name: string; icon?: string | null; url: string; isActive: boolean; category?: string | null
+  id: string; slug: string; name: string; icon?: string | null; url: string; isActive: boolean; category?: string | null; description?: string | null
 }
 
 const PLANS = ['starter', 'pro', 'enterprise']
@@ -342,9 +342,9 @@ export default function ManageContent() {
     setError('')
     try {
       await call('create', {
-        name: newUser.name, email: newUser.email, password: newUser.password,
+        name: newUser.name, password: newUser.password,
         tenantId: newUser.tenantId || undefined,
-      })
+      }, newUser.email)
       flash(`User "${newUser.name}" ditambahkan`)
       setShowAddUser(false)
       setNewUser({ name: '', email: '', password: '', tenantId: '' })
@@ -561,6 +561,27 @@ export default function ManageContent() {
               className="text-blue-400 underline underline-offset-2"
             >
               <PencilSquare size={14} className="inline mr-1.5" />Edit URL
+            </button>
+            <button
+              onClick={async () => {
+                const current = apps.find(a => a.slug === activeApp)!
+                const description = prompt(`Deskripsi singkat untuk "${current.name}" (mis. Sistem kasir modern):`, current.description || '')
+                if (description === null) return
+                try {
+                  const res = await fetch('/api/admin/apps', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: current.id, description }),
+                  })
+                  if (!res.ok) throw new Error((await res.json()).error || 'Gagal update deskripsi')
+                  flash('Deskripsi app diperbarui')
+                  fetchApps()
+                  fetchData(activeApp)
+                } catch (err: any) { setError(err.message) }
+              }}
+              className="text-blue-400 underline underline-offset-2"
+            >
+              <CardText size={14} className="inline mr-1.5" />Edit Deskripsi
             </button>
           </div>
         )}

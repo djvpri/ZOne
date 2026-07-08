@@ -70,7 +70,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   try {
-    const { app: slug, action, email, data } = await req.json()
+    const { app: slug, action, email: topEmail, data } = await req.json()
+    const email = topEmail || data?.email
     const app = await getApp(String(slug || ''))
     if (!app || !app.url || app.url === '#') {
       return NextResponse.json({ error: 'Invalid app' }, { status: 400 })

@@ -12,6 +12,9 @@ const APPS = [
   { slug: 'zface', name: 'Z-Face', description: 'Pengenalan wajah', icon: 'person-bounding-box', url: 'https://zface.zomet.my.id', color: '#9333ea', category: 'ai', order: 7 },
   { slug: 'zlaundry', name: 'ZLaundry', description: 'POS laundry', icon: 'basket3', url: 'https://zlaundry.zomet.my.id', color: '#0284c7', category: 'pos', order: 8 },
   { slug: 'ztrans', name: 'Z-Trans', description: 'Tiket & manajemen bus', icon: 'bus-front', url: 'https://ztrans.zomet.my.id', color: '#f5a524', category: 'pos', order: 9 },
+  { slug: 'zgym', name: 'ZGym', description: 'Manajemen fitness & gym', icon: 'heart-pulse', url: 'https://zgym.zomet.my.id', color: '#2563eb', category: 'booking', order: 10 },
+  { slug: 'zbilliar', name: 'ZBilliar', description: 'Manajemen billiar & arena', icon: 'grid-3x3-gap-fill', url: 'https://zbilliar.zomet.my.id', color: '#2563eb', category: 'booking', order: 11 },
+  { slug: 'zwisata', name: 'ZWisata', description: 'Manajemen taman wisata & wahana', icon: 'tree', url: 'https://zwisata.zomet.my.id', color: '#10b981', category: 'booking', order: 12 },
 ]
 
 async function seed() {

@@ -292,19 +292,6 @@ export default function LoginPage() {
           <p className="text-sm text-slate-400 mt-1">Ekosistem Digital</p>
         </div>
 
-        {/* Banner Maintenance */}
-        {maintenance?.enabled && (
-          <div className="mb-5 flex gap-3 items-start bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-3">
-            <span className="text-yellow-400 mt-0.5 shrink-0">⚠️</span>
-            <div>
-              <p className="text-sm font-semibold text-yellow-400">Sedang Pemeliharaan</p>
-              {maintenance.message && (
-                <p className="text-xs text-yellow-300/80 mt-0.5">{maintenance.message}</p>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Tabs */}
         <div className="flex gap-1 mb-5 bg-slate-800/50 p-1 rounded-xl">
           <button onClick={() => { setIsLogin(true); setError(''); stopCamera(); setFaceStatus('') }}
@@ -317,14 +304,16 @@ export default function LoginPage() {
           </button>
         </div>
 
-        {/* Maintenance banner */}
-        <div className="mb-4 bg-amber-500/15 border border-amber-500/30 text-amber-300 text-sm rounded-xl px-4 py-3 flex items-start gap-2">
-          <ExclamationTriangle size={18} className="shrink-0 mt-0.5" />
-          <div>
-            <strong className="block mb-0.5">Sedang Pemeliharaan</strong>
-            <span>Sistem sedang dalam pemeliharaan. Beberapa fitur mungkin tidak dapat diakses. Terima kasih atas pengertian Anda.</span>
+        {/* Maintenance banner — dikontrol dari /manage (DB), bukan hardcode */}
+        {maintenance?.enabled && (
+          <div className="mb-4 bg-amber-500/15 border border-amber-500/30 text-amber-300 text-sm rounded-xl px-4 py-3 flex items-start gap-2">
+            <ExclamationTriangle size={18} className="shrink-0 mt-0.5" />
+            <div>
+              <strong className="block mb-0.5">Sedang Pemeliharaan</strong>
+              <span>{maintenance.message || 'Sistem sedang dalam pemeliharaan. Beberapa fitur mungkin tidak dapat diakses. Terima kasih atas pengertian Anda.'}</span>
+            </div>
           </div>
-        </div>
+        )}
 
         {error && (
           <div className="mb-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl px-4 py-3">{error}</div>

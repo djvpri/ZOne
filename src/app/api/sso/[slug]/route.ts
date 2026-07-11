@@ -25,9 +25,17 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     return NextResponse.redirect(new URL('/dashboard?sso_error=user_not_found', req.url))
   }
 
-  // Cek hak akses: user harus punya UserApp aktif untuk app ini
-  const link = user.appLinks.find((ua: { app: { slug: string }; active: boolean }) => ua.app.slug === slug)
-  if (!link || !link.active) {
+  // Cek hak akses: user harus punya UserApp aktif untuk app ini.
+  // Kalau belum ada, auto-create (first-time access = grant akses).
+  let link = user.appLinks.find((ua: { app: { slug: string }; active: boolean }) => ua.app.slug === slug)
+  if (!link) {
+    // Auto-provision: buat UserApp baru supaya user bisa langsung akses
+    link = await prisma.userApp.create({
+      data: { userId: user.id, appId: app.id, active: true },
+    })
+    console.log(`[SSO] Auto-provisioned access: ${user.email} → ${slug}`)
+  } else if (!link.active) {
+    // Record ada tapi inactive — jangan auto-reactivate, minta admin
     return NextResponse.redirect(new URL(`/dashboard?sso_error=no_access&app=${slug}`, req.url))
   }
 

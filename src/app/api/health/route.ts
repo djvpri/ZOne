@@ -1,26 +1,24 @@
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 
-const prisma = new PrismaClient()
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
+  const start = Date.now()
   try {
-    // DB health check
     await prisma.$queryRaw`SELECT 1`
-    
     return NextResponse.json({
-      status: 'healthy',
-      app: 'ZOne',
-      timestamp: new Date().toISOString(),
-      database: 'connected'
+      status: 'ok',
+      db: 'connected',
+      dbLatencyMs: Date.now() - start,
+      timestamp: new Date().toISOString()
     })
-  } catch (error) {
+  } catch (err) {
     return NextResponse.json({
-      status: 'unhealthy',
-      app: 'ZOne',
-      timestamp: new Date().toISOString(),
-      database: 'disconnected',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 503 })
+      status: 'error',
+      db: 'disconnected',
+      error: err instanceof Error ? err.message : 'unknown',
+      timestamp: new Date().toISOString()
+    }, { status: 500 })
   }
 }

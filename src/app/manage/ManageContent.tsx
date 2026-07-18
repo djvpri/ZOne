@@ -696,8 +696,8 @@ export default function ManageContent() {
                         {u.role && (
                           <select value={u.role} onChange={(e) => handleUpdateRole(u.email, u.name, e.target.value)}
                             className="text-[10px] px-2 py-1 bg-slate-800 text-slate-300 border border-slate-600 rounded-lg cursor-pointer hover:border-slate-500">
-                            <option value="kasir">Kasir</option>
-                            <option value="admin">Admin</option>
+                            <option value="USER">User</option>
+                            <option value="ADMIN">Admin</option>
                           </select>
                         )}
                         {u.email && (

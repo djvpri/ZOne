@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { InstallPrompt } from '../pwa-register'
 import AppIcon from '@/components/AppIcon'
-import { CameraFill, PersonCircle, CashCoin, GearFill, BoxArrowRight, HouseDoorFill, CheckCircleFill, XLg, Wallet2, CashStack, Whatsapp } from 'react-bootstrap-icons'
+import { CameraFill, PersonCircle, CashCoin, GearFill, BoxArrowRight, HouseDoorFill, CheckCircleFill, XLg, Wallet2, CashStack, Whatsapp, CloudDownload } from 'react-bootstrap-icons'
 
 type App = {
   id: string; slug: string; name: string; description: string | null
@@ -287,6 +287,9 @@ export default function DashboardPage() {
               className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors text-lg" title="Scan QR Login">
               <CameraFill size={18} />
             </button>
+            <a href="/download" className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors text-lg" title="Unduh Aplikasi">
+              <CloudDownload size={18} />
+            </a>
             <a href="/profile" className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors text-lg" title="Profil">
               <PersonCircle size={18} />
             </a>

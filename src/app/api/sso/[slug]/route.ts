@@ -4,11 +4,23 @@ import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
 import { getCrossAppSecret } from '@/lib/secrets'
 
+// Di Railway, req.url berisi alamat internal (localhost:8080). Gunakan
+// x-forwarded-* headers atau NEXTAUTH_URL untuk mendapat URL publik ZOne.
+function zoneOrigin(req: NextRequest): string {
+  const forced = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL
+  if (forced) return forced.replace(/\/+$/, '')
+  const proto = req.headers.get('x-forwarded-proto') || 'https'
+  const host  = req.headers.get('x-forwarded-host') || req.headers.get('host')
+  if (host) return `${proto}://${host}`
+  return 'https://zone.zomet.my.id'
+}
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
+  const origin  = zoneOrigin(req)
   const session = await auth()
   if (!session?.user?.email) {
-    return NextResponse.redirect(new URL('/login', req.url))
+    return NextResponse.redirect(`${origin}/login`)
   }
 
   // Ambil URL app dari database (data-driven, tidak hardcode lagi)
@@ -22,7 +34,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     include: { appLinks: { include: { app: true } } },
   })
   if (!user) {
-    return NextResponse.redirect(new URL('/dashboard?sso_error=user_not_found', req.url))
+    return NextResponse.redirect(`${origin}/dashboard?sso_error=user_not_found`)
   }
 
   // Cek hak akses: user harus punya UserApp aktif untuk app ini.
@@ -36,7 +48,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     console.log(`[SSO] Auto-provisioned access: ${user.email} → ${slug}`)
   } else if (!link.active) {
     // Record ada tapi inactive — jangan auto-reactivate, minta admin
-    return NextResponse.redirect(new URL(`/dashboard?sso_error=no_access&app=${slug}`, req.url))
+    return NextResponse.redirect(`${origin}/dashboard?sso_error=no_access&app=${slug}`)
   }
 
   const baseUrl = app.url.trim().replace(/\/+$/, '').toLowerCase()

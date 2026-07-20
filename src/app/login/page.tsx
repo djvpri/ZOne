@@ -3,7 +3,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
-import { Stars, Key, Camera, Phone, CheckCircleFill, Clock, ArrowRepeat, ExclamationTriangle } from 'react-bootstrap-icons'
+import { Stars, Key, Camera, Phone, CheckCircleFill, Clock, ArrowRepeat, ExclamationTriangle, Download } from 'react-bootstrap-icons'
 
 type LoginMode = 'password' | 'face' | 'qr'
 
@@ -498,9 +498,13 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <p className="mt-6 text-center text-xs text-slate-600">
-          v1.0 · Z One Platform
-        </p>
+        <div className="mt-6 flex items-center justify-center gap-3">
+          <p className="text-xs text-slate-600">v1.0 · Z One Platform</p>
+          <span className="text-slate-700">·</span>
+          <Link href="/download" className="text-xs text-slate-500 hover:text-blue-400 transition-colors flex items-center gap-1">
+            <Download size={11} /> Unduh App
+          </Link>
+        </div>
         <p className="mt-2 text-center text-[10px] text-slate-700">
           © {new Date().getFullYear()} PT Zomet Teknologi Indonesia
         </p>

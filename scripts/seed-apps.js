@@ -15,6 +15,7 @@ const APPS = [
   { slug: 'zgym', name: 'ZGym', description: 'Manajemen fitness & gym', icon: 'heart-pulse', url: 'https://zgym.zomet.my.id', color: '#2563eb', category: 'booking', order: 10 },
   { slug: 'zbilliar', name: 'ZBilliar', description: 'Manajemen billiar & arena', icon: 'grid-3x3-gap-fill', url: 'https://zbilliar.zomet.my.id', color: '#2563eb', category: 'booking', order: 11 },
   { slug: 'zwisata', name: 'ZWisata', description: 'Manajemen taman wisata & wahana', icon: 'tree', url: 'https://zwisata.zomet.my.id', color: '#10b981', category: 'booking', order: 12 },
+  { slug: 'zkuis', name: 'ZKuis', description: 'Bank soal & kuis AI', icon: 'patch-question', url: 'https://zkuis.zomet.my.id', color: '#7c3aed', category: 'ai', order: 13 },
 ]
 
 async function seed() {

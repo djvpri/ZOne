@@ -3,7 +3,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import AppIcon from '@/components/AppIcon'
-import { Tools, BoxArrowRight, BoxSeam, ShieldLock, CheckLg, Link45deg, PencilSquare, CheckCircleFill, Trash, Key, Building, Palette, Grid3x3Gap, CardText } from 'react-bootstrap-icons'
+import { Tools, BoxArrowRight, BoxSeam, ShieldLock, CheckLg, Link45deg, PencilSquare, CheckCircleFill, Trash, Key, Building, Palette, Grid3x3Gap, CardText, Calendar3 } from 'react-bootstrap-icons'
 
 interface Tenant {
   id: string; name: string; plan?: string; active?: boolean; expires_at?: string | null; quota?: number
@@ -23,10 +23,24 @@ interface ZoneUser {
   appLinks: { appId: string; active: boolean }[]
 }
 
+// Baris rekap lintas-app (nama tenant + tanggal berakhir).
+interface RecapRow {
+  appName: string; appSlug: string; tenantName: string
+  plan?: string; active?: boolean; expired?: string | null
+}
+
+// Format penanggalan sederhana -> '1 Agu 2026'. tanpa dep.
+function fmtTgl(v?: string | null): string {
+  if (!v) return '-'
+  const d = new Date(v)
+  if (Number.isNaN(d.getTime())) return String(v)
+  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
 export default function ManageContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [view, setView] = useState<'apps' | 'access'>('apps')
+  const [view, setView] = useState<'apps' | 'access' | 'recap'>('apps')
   const [zoneUsers, setZoneUsers] = useState<ZoneUser[]>([])
   const [zoneUsersLoading, setZoneUsersLoading] = useState(false)
   const [accessSaving, setAccessSaving] = useState<string>('')
@@ -56,6 +70,11 @@ export default function ManageContent() {
   // Lisensi global (biaya + rekening perpanjangan)
   const [license, setLicense] = useState({ cost: '', cost_yearly: '', rek_bank: '', rek_nama: '', rek_no: '', whatsapp: '' })
   const [licenseSaving, setLicenseSaving] = useState(false)
+
+  // Rekap lintas-app (nama tenant + expiry)
+  const [recap, setRecap] = useState<RecapRow[]>([])
+  const [recapFailed, setRecapFailed] = useState<{ app: string; error: string }[]>([])
+  const [recapLoading, setRecapLoading] = useState(false)
 
   useEffect(() => {
     fetch('/api/settings')
@@ -104,6 +123,21 @@ export default function ManageContent() {
       if (res.ok) setZoneUsers(data.users || [])
     } catch { setError('Gagal memuat daftar user ZOne') }
     finally { setZoneUsersLoading(false) }
+  }, [])
+
+  const fetchRecap = useCallback(async () => {
+    setRecapLoading(true)
+    try {
+      const res = await fetch('/api/admin/tenants/recap')
+      const data = await res.json()
+      if (res.ok) {
+        setRecap(data.tenants || [])
+        setRecapFailed(data.failed || [])
+      } else {
+        setError(data.error || 'Gagal memuat rekap tenant')
+      }
+    } catch { setError('Gagal memuat rekap tenant') }
+    finally { setRecapLoading(false) }
   }, [])
 
   const fetchApps = useCallback(async () => {
@@ -537,9 +571,80 @@ export default function ManageContent() {
             className={`flex-1 text-xs font-semibold py-2 rounded-lg transition ${view === 'access' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>
             <ShieldLock size={14} className="inline mr-1.5" />Akses User
           </button>
+          <button onClick={() => { setView('recap'); fetchRecap() }}
+            className={`flex-1 text-xs font-semibold py-2 rounded-lg transition ${view === 'recap' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>
+            <Calendar3 size={14} className="inline mr-1.5" />Rekap Tenant
+          </button>
         </div>
 
-        {view === 'access' ? (
+        {view === 'recap' ? (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[11px] text-slate-500">
+                Rekap seluruh tenant dari semua app (ZPos, ZGold, dst) + tanggal berakhir lisensi. Diurutkan dari yang paling dekat kedaluwarsa.
+              </p>
+              <button onClick={fetchRecap} disabled={recapLoading}
+                className="shrink-0 text-[11px] px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition disabled:opacity-50">
+                {recapLoading ? 'Memuat…' : 'Muat ulang'}
+              </button>
+            </div>
+
+            {recapLoading ? (
+              <div className="text-center py-12">
+                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+              </div>
+            ) : recap.length === 0 ? (
+              <div className="text-center text-slate-500 text-sm py-10">Belum ada tenant terdeteksi.</div>
+            ) : (
+              <div className="overflow-x-auto bg-slate-900/50 border border-slate-700/40 rounded-xl">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-700/40">
+                      <th className="px-3 py-2.5 font-medium">Tenant</th>
+                      <th className="px-3 py-2.5 font-medium">App</th>
+                      <th className="px-3 py-2.5 font-medium">Plan</th>
+                      <th className="px-3 py-2.5 font-medium">Berakhir</th>
+                      <th className="px-3 py-2.5 font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recap.map((r, i) => {
+                      const expired = r.expired ? new Date(r.expired).getTime() : NaN
+                      const sisa = Number.isNaN(expired) ? null : Math.ceil((expired - Date.now()) / (1000 * 60 * 60 * 24))
+                      const sudahKedaluwarsa = sisa !== null && sisa <= 0
+                      const mauHabis = sisa !== null && sisa > 0 && sisa <= 30
+                      return (
+                        <tr key={`${r.appSlug}:${r.tenantName}:${i}`} className="border-b border-slate-800/60 last:border-0">
+                          <td className="px-3 py-2.5 text-white font-medium">{r.tenantName}</td>
+                          <td className="px-3 py-2.5 text-slate-400">{r.appName}</td>
+                          <td className="px-3 py-2.5 text-slate-400 capitalize">{r.plan || '-'}</td>
+                          <td className="px-3 py-2.5 font-mono text-slate-300">{fmtTgl(r.expired)}</td>
+                          <td className="px-3 py-2.5">
+                            {sudahKedaluwarsa ? (
+                              <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30">Kedaluwarsa</span>
+                            ) : mauHabis ? (
+                              <span className="text-[11px] px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/30">Sisa {sisa} hr</span>
+                            ) : sisa === null ? (
+                              <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-500 border border-slate-700">?</span>
+                            ) : (
+                              <span className="text-[11px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/30">Sisa {sisa} hr</span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {recapFailed.length > 0 && (
+              <div className="mt-3 text-[11px] text-slate-500">
+                Tidak terjangkau: {recapFailed.map(f => `${f.app} (${f.error})`).join(', ')}
+              </div>
+            )}
+          </div>
+        ) : view === 'access' ? (
           <div>
             <p className="text-[11px] text-slate-500 mb-4">
               Atur app mana yang bisa dibuka tiap user dari dashboard Z One. Satu user bisa jadi member di beberapa app sekaligus, tanpa otomatis dapat akses ke app lain.

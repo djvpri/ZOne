@@ -54,7 +54,7 @@ export default function ManageContent() {
   const [maintenanceSaving, setMaintenanceSaving] = useState(false)
 
   // Lisensi global (biaya + rekening perpanjangan)
-  const [license, setLicense] = useState({ cost: '', rek_bank: '', rek_nama: '', rek_no: '', whatsapp: '' })
+  const [license, setLicense] = useState({ cost: '', cost_yearly: '', rek_bank: '', rek_nama: '', rek_no: '', whatsapp: '' })
   const [licenseSaving, setLicenseSaving] = useState(false)
 
   useEffect(() => {
@@ -68,6 +68,7 @@ export default function ManageContent() {
         })
         setLicense({
           cost: s.license_cost || '',
+          cost_yearly: s.license_cost_yearly || '',
           rek_bank: s.license_rek_bank || '',
           rek_nama: s.license_rek_nama || '',
           rek_no: s.license_rek_no || '',
@@ -443,7 +444,16 @@ export default function ManageContent() {
               <input
                 type="text" value={license.cost}
                 onChange={e => setLicense(p => ({ ...p, cost: e.target.value }))}
-                placeholder="mis. 200000"
+                placeholder="mis. 100000 (per bulan)"
+                className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Biaya Tahunan (Rp, opsional — tampil sebagai penawaran hemat)</label>
+              <input
+                type="text" value={license.cost_yearly}
+                onChange={e => setLicense(p => ({ ...p, cost_yearly: e.target.value }))}
+                placeholder="mis. 1000000 (hemat 200rb/tahun)"
                 className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50"
               />
             </div>
@@ -491,6 +501,7 @@ export default function ManageContent() {
                 try {
                   const keys: [string, string][] = [
                     ['license_cost', license.cost],
+                    ['license_cost_yearly', license.cost_yearly],
                     ['license_rek_bank', license.rek_bank],
                     ['license_rek_nama', license.rek_nama],
                     ['license_rek_no', license.rek_no],

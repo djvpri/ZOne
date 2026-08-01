@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'key & value wajib diisi' }, { status: 400 })
   }
 
-  const ALLOWED = ['maintenance_enabled', 'maintenance_message', 'license_cost', 'license_rek_bank', 'license_rek_nama', 'license_rek_no', 'license_whatsapp']
+  const ALLOWED = ['maintenance_enabled', 'maintenance_message', 'license_cost', 'license_cost_yearly', 'license_rek_bank', 'license_rek_nama', 'license_rek_no', 'license_whatsapp']
   if (!ALLOWED.includes(key)) {
     return NextResponse.json({ error: 'Key tidak diizinkan' }, { status: 400 })
   }

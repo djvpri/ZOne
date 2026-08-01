@@ -10,6 +10,7 @@ export async function GET() {
     // utk tab lisensi. Sengaja publik: rekening pembayaran memang utk dilihat
     // tenant yang mau bayar, dan diatur admin via /api/admin/settings.
     'license_cost',
+    'license_cost_yearly', // opsi tahunan (hemat)
     'license_rek_bank',
     'license_rek_nama',
     'license_rek_no',

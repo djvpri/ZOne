@@ -3,7 +3,18 @@ import { prisma } from '@/lib/prisma'
 
 // GET /api/settings — settings publik (untuk login page, tanpa auth)
 export async function GET() {
-  const PUBLIC_KEYS = ['maintenance_enabled', 'maintenance_message']
+  const PUBLIC_KEYS = [
+    'maintenance_enabled',
+    'maintenance_message',
+    // Lisensi global (biaya + rekening perpanjangan) — dipakai ZPos & app lain
+    // utk tab lisensi. Sengaja publik: rekening pembayaran memang utk dilihat
+    // tenant yang mau bayar, dan diatur admin via /api/admin/settings.
+    'license_cost',
+    'license_rek_bank',
+    'license_rek_nama',
+    'license_rek_no',
+    'license_whatsapp',
+  ]
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rows = (await prisma.$queryRawUnsafe(

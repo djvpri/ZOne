@@ -58,5 +58,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     { algorithm: 'HS256', expiresIn: '300s' }
   )
 
-  return NextResponse.redirect(`${baseUrl}/sso?token=${encodeURIComponent(token)}`)
+  // Jalur C (QR login desktop): bila dipanggil dengan ?device=..., teruskan ke
+  // ZPos supaya server bisa pasang token ke baris device_login. tanpa device,
+  // perilaku lama (SSO web biasa) tidak berubah.
+  const device = req.nextUrl.searchParams.get('device')
+  const deviceQuery = device ? `&device=${encodeURIComponent(device)}` : ''
+
+  return NextResponse.redirect(`${baseUrl}/sso?token=${encodeURIComponent(token)}${deviceQuery}`)
 }

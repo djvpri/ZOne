@@ -42,7 +42,7 @@ const downloads: Record<Platform, AppDownload[]> = {
     { id: 'zrooms',    name: 'ZRooms',       description: 'Booking workspace & penginapan',                    version: '1.0.0', size: '16 MB', color: 'from-violet-500 to-purple-600',driveUrl: null },
     { id: 'zwisata',   name: 'ZWisata',      description: 'Manajemen wisata & laporan pendapatan',             version: '1.0.0', size: '19 MB', color: 'from-emerald-500 to-green-600',driveUrl: null },
     { id: 'ztransport',name: 'ZTransport',   description: 'POS tiket bus & travel, QR boarding',              version: '1.0.0', size: '21 MB', color: 'from-sky-500 to-blue-600',     driveUrl: null },
-    { id: 'zsafe',     name: 'ZSafe',        description: 'Link protection & security device membership',       version: '0.2.0', size: '8 MB',  color: 'from-lime-500 to-green-600',   driveUrl: 'https://github.com/djvpri/zsafe_android/releases/latest/download/Zsafe-v0.2.0.apk' },
+    { id: 'zshield',   name: 'ZShield',     description: 'Link protection & security device membership',       version: '0.3.0', size: '8 MB',  color: 'from-lime-500 to-green-600',   driveUrl: 'https://github.com/djvpri/zsafe_android/releases/latest/download/ZShield-v0.3.0.apk' },
   ],
   ios: [
     { id: 'zone',   name: 'ZOne Mobile', description: 'SSO hub: login QR, Face ID & kelola akun',  version: '1.0.0', size: '28 MB', color: 'from-blue-500 to-purple-600',  driveUrl: null },

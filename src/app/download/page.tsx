@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import {
   Windows, Apple, Android, Phone,
-  Download, ArrowLeft, CheckCircle, Clock,
+  Download, ArrowLeft, Clock,
 } from 'react-bootstrap-icons'
 
 type Platform = 'windows' | 'macos' | 'android' | 'ios'

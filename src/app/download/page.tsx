@@ -21,7 +21,7 @@ interface AppDownload {
 const downloads: Record<Platform, AppDownload[]> = {
   windows: [
     { id: 'zone',     name: 'ZOne Desktop',   description: 'Hub SSO — kelola semua akses dari satu tempat',     version: '1.0.0', size: '85 MB',  color: 'from-blue-500 to-purple-600',   driveUrl: null },
-    { id: 'zpos',     name: 'ZPos',            description: 'Point of Sale serba guna untuk retail & toko',      version: '1.0.0', size: '92 MB',  color: 'from-orange-500 to-red-500',     driveUrl: null },
+    { id: 'zpos',     name: 'ZPos',            description: 'Point of Sale serba guna untuk retail & toko',      version: '1.0.0', size: '92 MB',  color: 'from-orange-500 to-red-500',     driveUrl: 'https://github.com/djvpri/zpos_windows/releases/latest/download/zpos-kasir.exe' },
     { id: 'zgold',    name: 'ZGold',           description: 'POS perhiasan multi-logam emas, perak & berlian',   version: '1.0.0', size: '88 MB',  color: 'from-yellow-500 to-orange-500',  driveUrl: null },
     { id: 'zbengkel', name: 'ZBengkel',        description: 'Manajemen bengkel: work order, stok & kasir',       version: '1.0.0', size: '90 MB',  color: 'from-slate-500 to-slate-700',    driveUrl: null },
     { id: 'zbilliar', name: 'ZBilliar',        description: 'POS billiard: meja, timer & laporan harian',        version: '1.0.0', size: '78 MB',  color: 'from-green-600 to-emerald-700',  driveUrl: null },
@@ -97,7 +97,7 @@ export default function DownloadPage() {
         {/* Notice: semua coming soon */}
         <div className="flex items-center gap-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 mb-6 text-amber-300 text-xs">
           <Clock size={15} className="shrink-0" />
-          <span>Aplikasi native sedang dalam pengembangan. Link unduhan akan aktif saat rilis.</span>
+          <span>Aplikasi native untuk platform lain masih dalam pengembangan. ZPos Windows sudah tersedia.</span>
         </div>
 
         {/* App list */}

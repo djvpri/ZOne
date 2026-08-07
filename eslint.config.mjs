@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Node CJS scripts (migrasi/prisma) bukan modul TS — require() valid di sana.
+    "scripts/**",
   ]),
 ]);
 

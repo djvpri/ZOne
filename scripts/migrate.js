@@ -37,18 +37,12 @@ async function migrate() {
   await run(`INSERT INTO "SiteSettings" (key, value, "updatedAt") VALUES ('maintenance_enabled', 'false', now()) ON CONFLICT (key) DO NOTHING`)
   await run(`INSERT INTO "SiteSettings" (key, value, "updatedAt") VALUES ('maintenance_message', 'Sistem sedang dalam pemeliharaan. Beberapa fitur mungkin tidak dapat diakses. Terima kasih atas pengertian Anda.', now()) ON CONFLICT (key) DO NOTHING`)
 
-  console.log('Migrations done ✓')
-}
-
-// Normalisasi role lowercase legacy ('admin'/'staff') ke ADMIN
-async function normalizeRoles() {
-  try {
-    await p.$executeRawUnsafe(`UPDATE "User" SET role = 'ADMIN' WHERE role IN ('admin', 'staff')`)
-    console.log('Roles normalized ✓')
-  } catch(e) { console.warn('normalize warn:', e.message?.slice(0,80)) }
+// role kolom adalah enum "Role" (USER/ADMIN) — tak ada data legacy lowercase
+// yang bisa tersimpan. Query normalisasi legacy ('admin'/'staff') tiap startup
+// lempar error 22P02 (nilai bukan anggota enum). Dihapus: tak berfungsi.
+console.log('Migrations done ✓')
 }
 
 migrate()
-  .then(() => normalizeRoles())
   .catch(e => { console.error('Migration error:', e.message); process.exit(0) })
   .finally(() => p.$disconnect())

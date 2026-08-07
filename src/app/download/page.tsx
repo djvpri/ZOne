@@ -26,7 +26,7 @@ const downloads: Record<Platform, AppDownload[]> = {
     { id: 'zbengkel', name: 'ZBengkel',        description: 'Manajemen bengkel: work order, stok & kasir',       version: '1.0.0', size: '90 MB',  color: 'from-slate-500 to-slate-700',    driveUrl: null },
     { id: 'zbilliar', name: 'ZBilliar',        description: 'POS billiard: meja, timer & laporan harian',        version: '1.0.0', size: '78 MB',  color: 'from-green-600 to-emerald-700',  driveUrl: null },
     { id: 'zresto',   name: 'ZResto',          description: 'POS restoran lengkap: meja, shift & laporan',       version: '1.0.0', size: '95 MB',  color: 'from-red-500 to-rose-600',       driveUrl: null },
-    { id: 'zface',    name: 'ZFace Desktop',   description: 'Server face recognition multi-tenant',              version: '1.0.0', size: '210 MB', color: 'from-cyan-500 to-blue-600',      driveUrl: null },
+    { id: 'zface',    name: 'ZFace Desktop',   description: 'Server face recognition multi-tenant',              version: '1.0.0', size: '210 MB', color: 'from-cyan-500 to-blue-600',      driveUrl: 'https://github.com/djvpri/zface-desktop/releases/latest/download/ZFace-Desktop.zip' },
   ],
   macos: [
     { id: 'zone',   name: 'ZOne Desktop', description: 'Hub SSO — kelola semua akses dari satu tempat',   version: '1.0.0', size: '88 MB',  color: 'from-blue-500 to-purple-600',  driveUrl: null },

@@ -468,7 +468,7 @@ export default function ManageContent() {
             <div>
               <p className="text-sm font-semibold">Lisensi / Biaya Perpanjangan</p>
               <p className="text-xs text-slate-400 mt-0.5">
-                Biaya &amp; rekening ini ditampilkan di tab Lisensi semua app (ZPos dll) saat tenant mau memperpanjang. Berlaku seragam utk semua tenant.
+                Biaya &amp; rekening ini ditampilkan di tab Lisensi semua app (Z1 Pos dll) saat tenant mau memperpanjang. Berlaku seragam utk semua tenant.
               </p>
             </div>
           </div>
@@ -581,7 +581,7 @@ export default function ManageContent() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <p className="text-[11px] text-slate-500">
-                Rekap seluruh tenant dari semua app (ZPos, ZGold, dst) + tanggal berakhir lisensi. Diurutkan dari yang paling dekat kedaluwarsa.
+                Rekap seluruh tenant dari semua app (Z1 Pos, ZGold, dst) + tanggal berakhir lisensi. Diurutkan dari yang paling dekat kedaluwarsa.
               </p>
               <button onClick={fetchRecap} disabled={recapLoading}
                 className="shrink-0 text-[11px] px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition disabled:opacity-50">

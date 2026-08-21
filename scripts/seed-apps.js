@@ -2,7 +2,7 @@ const { PrismaClient } = require('@prisma/client')
 const p = new PrismaClient()
 
 const APPS = [
-  { slug: 'zpos', name: 'ZPos', description: 'Sistem kasir modern', icon: 'shop', url: 'https://zpos.zomet.my.id', color: '#2563eb', category: 'pos', order: 0 },
+  { slug: 'zpos', name: 'Z1 Pos', description: 'Sistem kasir modern', icon: 'shop', url: 'https://zpos.zomet.my.id', color: '#2563eb', category: 'pos', order: 0 },
   { slug: 'zgold', name: 'ZGold', description: 'POS toko perhiasan', icon: 'gem', url: 'https://zgold.zomet.my.id', color: '#d97706', category: 'pos', order: 1 },
   { slug: 'zresto', name: 'Z-Resto', description: 'Manajemen restoran', icon: 'cup-hot', url: 'https://zresto.zomet.my.id', color: '#059669', category: 'pos', order: 2 },
   { slug: 'zbengkel', name: 'ZBengkel', description: 'Manajemen bengkel', icon: 'wrench-adjustable', url: 'https://zbengkel.zomet.my.id', color: '#dc2626', category: 'service', order: 3 },

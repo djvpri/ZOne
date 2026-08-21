@@ -133,7 +133,7 @@ export default function AffiliatePage() {
             </div>
             <a
               href={`https://wa.me/6282153533164?text=${encodeURIComponent(
-                `DAFTAR USER BARU\nKode Referral saya: ${myAffiliate.referralCode}\nNama Usaha: \nNama Pemilik: \nNo HP: \nJenis Usaha (ZPOS/ZGold/ZResto/dll): \nKota: `
+                `DAFTAR USER BARU\nKode Referral saya: ${myAffiliate.referralCode}\nNama Usaha: \nNama Pemilik: \nNo HP: \nJenis Usaha (Z1 Pos/ZGold/ZResto/dll): \nKota: `
               )}`}
               target="_blank"
               rel="noopener noreferrer"

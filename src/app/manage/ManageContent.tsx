@@ -305,7 +305,10 @@ export default function ManageContent() {
     e.preventDefault()
     if (!newTenantName.trim()) return
     try {
-      await call('createTenant', { name: newTenantName.trim() })
+      // Owner email wajib di schema app tujuan (z.pos tenant.email Owner email).
+      // Default ke email admin ZOne yang login kalau tak ada field owner terisi.
+      const ownerEmail = (session?.user as any)?.email || ''
+      await call('createTenant', { name: newTenantName.trim() }, ownerEmail)
       flash(`Tenant "${newTenantName}" dibuat`)
       setNewTenantName('')
       fetchData(activeApp)

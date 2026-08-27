@@ -85,6 +85,10 @@ export async function POST(req: NextRequest) {
     }
     const baseUrl = app.url.trim().replace(/\/+$/, '').toLowerCase()
 
+    // LOG diagnosa: tampil di log server hub (docker logs). Bantu cari akar
+    // saat buat tenant spoke gagal ("email wajib diisi", dst.)
+    console.log(`[cross-app POST] app=${slug} action=${action} email="${email}" (topEmail=${JSON.stringify(topEmail)} data.email=${JSON.stringify(data?.email)}) target=${baseUrl}`)
+
     const response = await fetch(`${baseUrl}/api/admin/cross-app`, {
       method: 'POST',
       headers: {
@@ -94,7 +98,9 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({ action, email, data }),
     })
 
-    const result = await response.json()
+    let result: any
+    try { result = await response.json() } catch { result = { raw: '(non-JSON)' } }
+    console.log(`[cross-app POST] spoke=${baseUrl} status=${response.status} result=${JSON.stringify(result)}`)
 
     // Begitu user dibuat di spoke, buat juga akun hub + link app (best-effort,
     // jangan gagalkan response spoke kalau sinkron hub error).
@@ -108,7 +114,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result, { status: response.status })
   } catch (error) {
-    console.error('Cross-app proxy action error:', error)
+    console.error('[cross-app POST] FAILED:', error instanceof Error ? error.message : String(error))
     return NextResponse.json({ error: 'Failed to reach app' }, { status: 502 })
   }
 }

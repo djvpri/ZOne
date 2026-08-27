@@ -17,7 +17,7 @@ const URLS = {
   zface: 'https://zface.zomet.my.id',
   zabsen: 'https://zabsen.zomet.my.id',
   zwisata: 'https://zwisata.zomet.my.id',
-  zgym: 'https://zgym.zomet.my.id',
+  zgym: 'https://zxgym.zomet.my.id',
   zresto: 'https://zresto.zomet.my.id',
 }
 

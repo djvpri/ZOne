@@ -71,7 +71,14 @@ export async function POST(req: NextRequest) {
   }
   try {
     const { app: slug, action, email: topEmail, data } = await req.json()
-    const email = topEmail || data?.email
+    const sessionUser = (session?.user as any) || null
+    let email = topEmail || data?.email
+    // Kalau frontend tak kirim email (mis. session JWT kehilangan field email),
+    // fallback ke email admin yang login dari DB hub (bukan dari token).
+    if (!email && sessionUser?.id) {
+      const admin = await prisma.user.findUnique({ where: { id: sessionUser.id }, select: { email: true } })
+      email = admin?.email || ''
+    }
     const app = await getApp(String(slug || ''))
     if (!app || !app.url || app.url === '#') {
       return NextResponse.json({ error: 'Invalid app' }, { status: 400 })

@@ -55,7 +55,7 @@ export default function ManageContent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [joinQR, setJoinQR] = useState<{ name: string; link: string } | null>(null)
+  const [joinQR, setJoinQR] = useState<{ type: 'join' | 'absen'; name: string; link: string } | null>(null)
 
   const [newTenantName, setNewTenantName] = useState('')
   const [showAddUser, setShowAddUser] = useState(false)
@@ -364,7 +364,23 @@ export default function ManageContent() {
         setTenants(prev => prev.map(x => x.id === t.id ? { ...x, join_token: tok } : x))
       } catch (err: any) { setError(`Gagal buat token join: ${err.message}`); return }
     }
-    setJoinQR({ name: t.name, link: `https://zone.zomet.my.id/join/${activeApp}/${tok}` })
+    setJoinQR({ type: 'join', name: t.name, link: `https://zone.zomet.my.id/join/${activeApp}/${tok}` })
+  }
+
+  // Tampilkan QR/link absen mandiri. Pakai token join yang sama (token tenant
+  // unik) — URL absen: zone.zomet.my.id/absen/<appSlug>/<joinToken>.
+  const handleShowAbsenQR = async (t: Tenant) => {
+    let tok = t.join_token
+    if (!tok) {
+      if (!confirm(`Tenant "${t.name}" belum punya token absen. Buat token sekarang?`)) return
+      try {
+        const res = await call('setJoinToken', { tenantId: t.id }) as { joinToken?: string }
+        tok = res?.joinToken
+        if (!tok) throw new Error('App tidak mengembalikan token')
+        setTenants(prev => prev.map(x => x.id === t.id ? { ...x, join_token: tok } : x))
+      } catch (err: unknown) { setError(`Gagal buat token absen: ${err instanceof Error ? err.message : String(err)}`); return }
+    }
+    setJoinQR({ type: 'absen', name: t.name, link: `https://zone.zomet.my.id/absen/${activeApp}/${tok}` })
   }
 
   const handleDeleteUser = async (email: string | undefined, name: string) => {
@@ -586,7 +602,7 @@ export default function ManageContent() {
         <div className="flex gap-1 mb-4 bg-slate-800/30 p-1 rounded-xl">
           <button onClick={() => setView('apps')}
             className={`flex-1 text-xs font-semibold py-2 rounded-lg transition ${view === 'apps' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>
-            <BoxSeam size={14} className="inline mr-1.5" />Kelola Per-App
+            <BoxSeam size={14} className="inline mr-1.5" />Per-App
           </button>
           <button onClick={() => setView('access')}
             className={`flex-1 text-xs font-semibold py-2 rounded-lg transition ${view === 'access' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>
@@ -867,34 +883,41 @@ export default function ManageContent() {
                           {(t.plan || 'starter').toUpperCase()}
                         </span>
                       </div>
-                      <div className="flex gap-2 mb-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] text-slate-500">
+                          {t.expires_at ? `Berakhir: ${new Date(t.expires_at).toLocaleDateString('id-ID')}` : 'Belum ada tanggal berakhir'}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <input type="date" id={`exp-${t.id}`}
+                            className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-[10px] text-white" />
+                          <button onClick={() => {
+                            const el = document.getElementById(`exp-${t.id}`) as HTMLInputElement
+                            handleSetExpiry(t.id, t.plan || 'starter', el.value)
+                          }} className="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg flex-shrink-0">
+                            Set
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1.5 mb-2">
                         {PLANS.map(p => (
                           <button key={p} onClick={() => handleSetPlan(t.id, p)}
-                            className={`text-[10px] px-2 py-1 rounded-lg border transition ${
+                            className={`text-[10px] px-2 py-1.5 rounded-lg border transition ${
                               t.plan === p ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500'
                             }`}>
                             {p.charAt(0).toUpperCase() + p.slice(1)}
                           </button>
                         ))}
                       </div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-[10px] text-slate-500 flex-shrink-0">
-                          {t.expires_at ? `Exp: ${new Date(t.expires_at).toLocaleDateString('id-ID')}` : 'Belum ada expiry'}
-                        </span>
-                        <input type="date" id={`exp-${t.id}`}
-                          className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-[10px] text-white" />
-                        <button onClick={() => {
-                          const el = document.getElementById(`exp-${t.id}`) as HTMLInputElement
-                          handleSetExpiry(t.id, t.plan || 'starter', el.value)
-                        }} className="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg flex-shrink-0">
-                          Set
-                        </button>
-                      </div>
-                      <div className="flex flex-wrap gap-2 mb-2">
+                      <div className="grid grid-cols-2 gap-1.5">
                         <button
                           onClick={() => handleShowJoinQR(t)}
-                          className="text-[10px] px-2 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg">
-                          <QrCode size={13} className="inline mr-1.5" />QR Gabung Member
+                          className="text-[10px] px-2 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg flex items-center justify-center gap-1">
+                          <QrCode size={12} className="inline" />QR Gabung
+                        </button>
+                        <button
+                          onClick={() => handleShowAbsenQR(t)}
+                          className="text-[10px] px-2 py-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg flex items-center justify-center gap-1">
+                          <QrCode size={12} className="inline" />QR Absen
                         </button>
                         {t.join_token && (
                           <button
@@ -902,8 +925,8 @@ export default function ManageContent() {
                               const link = `https://zone.zomet.my.id/join/${activeApp}/${t.join_token}`
                               navigator.clipboard?.writeText(link).then(() => setSuccess('Link join disalin')).catch(() => {})
                             }}
-                            className="text-[10px] px-2 py-1 bg-slate-500/10 text-slate-300 border border-slate-500/20 rounded-lg">
-                            <Link45deg size={13} className="inline mr-1.5" />Salin Link
+                            className="col-span-2 text-[10px] px-2 py-1.5 bg-slate-500/10 text-slate-300 border border-slate-500/20 rounded-lg flex items-center justify-center gap-1">
+                            <Link45deg size={12} className="inline" />Salin Link Join
                           </button>
                         )}
                       </div>
@@ -1025,17 +1048,26 @@ export default function ManageContent() {
         </div>
       )}
       {joinQR && (
-        <div className="fixed inset-0 bg-black/60 z-30 flex items-center justify-center p-4" onClick={() => setJoinQR(null)}>
-          <div onClick={e => e.stopPropagation()} className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-xs text-center">
-            <h3 className="font-bold mb-1">QR Gabung Member</h3>
-            <p className="text-xs text-slate-400 mb-4">Scan utk daftar jadi member <span className="text-emerald-400">{joinQR.name}</span></p>
+        <div className="fixed inset-0 bg-black/60 z-30 flex items-end sm:items-center justify-center p-4" onClick={() => setJoinQR(null)}>
+          <div onClick={e => e.stopPropagation()} className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-sm text-center">
+            <h3 className="font-bold mb-1">{joinQR.type === 'absen' ? 'QR Absensi Mandiri' : 'QR Gabung Member'}</h3>
+            <p className="text-xs text-slate-400 mb-4">
+              {joinQR.type === 'absen'
+                ? <>Scan utk absen mandiri <span className="text-emerald-400">{joinQR.name}</span></>
+                : <>Scan utk daftar jadi member <span className="text-emerald-400">{joinQR.name}</span></>}
+            </p>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`/api/qr?text=${encodeURIComponent(joinQR.link)}&s=260`} width={260} height={260} alt="QR gabung" className="mx-auto rounded-xl bg-white p-2 mb-4" />
+            <img src={`/api/qr?text=${encodeURIComponent(joinQR.link)}&s=240`} width={240} height={240} alt="QR" className="mx-auto rounded-xl bg-white p-2 mb-4" />
             <div className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 mb-3 text-[11px] text-slate-400 break-all select-all">{joinQR.link}</div>
             <div className="flex gap-2">
+              <a download
+                href={`/api/qr?text=${encodeURIComponent(joinQR.link)}&s=1024`}
+                className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold py-2.5 rounded-xl text-center">
+                Download
+              </a>
               <button onClick={() => { navigator.clipboard?.writeText(joinQR.link).then(() => setSuccess('Link disalin')).catch(() => {}) }}
                 className="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold py-2.5 rounded-xl">Salin</button>
-              <button onClick={() => setJoinQR(null)} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold py-2.5 rounded-xl">Tutup</button>
+              <button onClick={() => setJoinQR(null)} className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold py-2.5 rounded-xl">Tutup</button>
             </div>
           </div>
         </div>

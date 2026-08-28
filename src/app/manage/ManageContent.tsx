@@ -351,6 +351,22 @@ export default function ManageContent() {
     } catch (err: any) { setError(`Gagal aktifkan ulang: ${err.message}`) }
   }
 
+  // Tampilkan QR/link gabung member. Kalau tenant belum punya token join
+  // (legacy, join_token null), buat token dulu via ZXgym setJoinToken.
+  const handleShowJoinQR = async (t: Tenant) => {
+    let tok = t.join_token
+    if (!tok) {
+      if (!confirm(`Tenant "${t.name}" belum punya token join. Buat token baru sekarang?`)) return
+      try {
+        const res: any = await call('setJoinToken', { tenantId: t.id })
+        tok = res?.joinToken
+        if (!tok) throw new Error('ZXgym tidak mengembalikan token')
+        setTenants(prev => prev.map(x => x.id === t.id ? { ...x, join_token: tok } : x))
+      } catch (err: any) { setError(`Gagal buat token join: ${err.message}`); return }
+    }
+    setJoinQR({ name: t.name, link: `https://zone.zomet.my.id/join/${activeApp}/${tok}` })
+  }
+
   const handleDeleteUser = async (email: string | undefined, name: string) => {
     if (!email) { setError(`User "${name}" tidak punya email, tidak bisa dihapus dari sini.`); return }
     if (!confirm(`Nonaktifkan user "${name}" (${email})?\nUser tidak akan bisa login lagi, tapi bisa diaktifkan ulang kapan saja.`)) return
@@ -876,12 +892,7 @@ export default function ManageContent() {
                       </div>
                       <div className="flex flex-wrap gap-2 mb-2">
                         <button
-                          onClick={() => {
-                            const tok = t.join_token
-                            if (!tok) { setError('Tenant belum punya token join (temukan di ZXgym / buat ulang tenant)'); return }
-                            const link = `https://zone.zomet.my.id/join/${activeApp}/${tok}`
-                            setJoinQR({ name: t.name, link })
-                          }}
+                          onClick={() => handleShowJoinQR(t)}
                           className="text-[10px] px-2 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg">
                           <QrCode size={13} className="inline mr-1.5" />QR Gabung Member
                         </button>

@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
             appName: app.name,
             appSlug: app.slug,
             tenantName: name,
-            plan: t.plan ?? 'starter',
+            plan: t.plan ?? 'free',
             active: t.active ?? t.aktif ?? t.isActive ?? false,
             expired: t.expires_at ?? t.expiresAt ?? t.langganan_sampai ?? null,
           })

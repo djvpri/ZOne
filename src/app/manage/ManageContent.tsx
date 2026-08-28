@@ -16,7 +16,7 @@ interface AppRow {
   id: string; slug: string; name: string; icon?: string | null; url: string; isActive: boolean; category?: string | null; description?: string | null
 }
 
-const PLANS = ['starter', 'pro', 'enterprise']
+const PLANS = ['free', 'basic', 'pro', 'enterprise']
 
 interface ZoneUser {
   id: string; name: string; email: string; role: string
@@ -878,9 +878,10 @@ export default function ManageContent() {
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                           t.plan === 'enterprise' ? 'bg-purple-500/20 text-purple-300' :
                           t.plan === 'pro' ? 'bg-blue-500/20 text-blue-300' :
+                          t.plan === 'basic' ? 'bg-emerald-500/20 text-emerald-300' :
                           'bg-slate-500/20 text-slate-400'
                         }`}>
-                          {(t.plan || 'starter').toUpperCase()}
+                          {(t.plan || 'free').toUpperCase()}
                         </span>
                       </div>
                       <div className="flex items-center justify-between mb-2">
@@ -892,7 +893,7 @@ export default function ManageContent() {
                             className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-[10px] text-white" />
                           <button onClick={() => {
                             const el = document.getElementById(`exp-${t.id}`) as HTMLInputElement
-                            handleSetExpiry(t.id, t.plan || 'starter', el.value)
+                            handleSetExpiry(t.id, t.plan || 'free', el.value)
                           }} className="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg flex-shrink-0">
                             Set
                           </button>

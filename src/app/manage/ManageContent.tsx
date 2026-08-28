@@ -3,10 +3,10 @@ import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import AppIcon from '@/components/AppIcon'
-import { Tools, BoxArrowRight, BoxSeam, ShieldLock, CheckLg, Link45deg, PencilSquare, CheckCircleFill, Trash, Key, Building, Palette, Grid3x3Gap, CardText, Calendar3 } from 'react-bootstrap-icons'
+import { Tools, BoxArrowRight, BoxSeam, ShieldLock, CheckLg, Link45deg, PencilSquare, CheckCircleFill, Trash, Key, Building, Palette, Grid3x3Gap, CardText, Calendar3, QrCode } from 'react-bootstrap-icons'
 
 interface Tenant {
-  id: string; name: string; plan?: string; active?: boolean; expires_at?: string | null; quota?: number
+  id: string; name: string; plan?: string; active?: boolean; expires_at?: string | null; quota?: number; join_token?: string | null
 }
 interface AppUser {
   id?: string; name: string; email?: string; faces?: number; linked_email?: string | null; tenantId?: string | null; active?: boolean; role?: string
@@ -55,6 +55,7 @@ export default function ManageContent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [joinQR, setJoinQR] = useState<{ name: string; link: string } | null>(null)
 
   const [newTenantName, setNewTenantName] = useState('')
   const [showAddUser, setShowAddUser] = useState(false)
@@ -265,6 +266,7 @@ export default function ManageContent() {
         plan: t.plan,
         active: t.active ?? t.aktif ?? t.isActive,
         expires_at: t.expires_at ?? t.expiresAt ?? t.langganan_sampai ?? null,
+        join_token: t.join_token ?? t.joinToken ?? null,
       }))
       const normUsers: AppUser[] = (data.users || []).map((u: any) => ({
         id: u.id != null ? String(u.id) : undefined,
@@ -872,6 +874,28 @@ export default function ManageContent() {
                           Set
                         </button>
                       </div>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        <button
+                          onClick={() => {
+                            const tok = t.join_token
+                            if (!tok) { setError('Tenant belum punya token join (temukan di ZXgym / buat ulang tenant)'); return }
+                            const link = `https://zone.zomet.my.id/join/${activeApp}/${tok}`
+                            setJoinQR({ name: t.name, link })
+                          }}
+                          className="text-[10px] px-2 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg">
+                          <QrCode size={13} className="inline mr-1.5" />QR Gabung Member
+                        </button>
+                        {t.join_token && (
+                          <button
+                            onClick={() => {
+                              const link = `https://zone.zomet.my.id/join/${activeApp}/${t.join_token}`
+                              navigator.clipboard?.writeText(link).then(() => setSuccess('Link join disalin')).catch(() => {})
+                            }}
+                            className="text-[10px] px-2 py-1 bg-slate-500/10 text-slate-300 border border-slate-500/20 rounded-lg">
+                            <Link45deg size={13} className="inline mr-1.5" />Salin Link
+                          </button>
+                        )}
+                      </div>
                       {t.active === false ? (
                         <button onClick={() => handleReactivateTenant(t.id, t.name)}
                           className="text-[10px] px-2 py-1 bg-green-500/10 text-green-400 border border-green-500/20 rounded-lg">
@@ -986,6 +1010,22 @@ export default function ManageContent() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {joinQR && (
+        <div className="fixed inset-0 bg-black/60 z-30 flex items-center justify-center p-4" onClick={() => setJoinQR(null)}>
+          <div onClick={e => e.stopPropagation()} className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-xs text-center">
+            <h3 className="font-bold mb-1">QR Gabung Member</h3>
+            <p className="text-xs text-slate-400 mb-4">Scan utk daftar jadi member <span className="text-emerald-400">{joinQR.name}</span></p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`/api/qr?text=${encodeURIComponent(joinQR.link)}&s=260`} width={260} height={260} alt="QR gabung" className="mx-auto rounded-xl bg-white p-2 mb-4" />
+            <div className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 mb-3 text-[11px] text-slate-400 break-all select-all">{joinQR.link}</div>
+            <div className="flex gap-2">
+              <button onClick={() => { navigator.clipboard?.writeText(joinQR.link).then(() => setSuccess('Link disalin')).catch(() => {}) }}
+                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold py-2.5 rounded-xl">Salin</button>
+              <button onClick={() => setJoinQR(null)} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold py-2.5 rounded-xl">Tutup</button>
+            </div>
           </div>
         </div>
       )}

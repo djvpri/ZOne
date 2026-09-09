@@ -104,9 +104,10 @@ export async function POST(req: NextRequest) {
 
     // Begitu user dibuat di spoke, buat juga akun hub + link app (best-effort,
     // jangan gagalkan response spoke kalau sinkron hub error).
-    if (action === 'create' && response.ok && !result?.error && data?.email) {
+    const createEmail = String(data?.email || email || '').trim()
+    if (action === 'create' && response.ok && !result?.error && createEmail) {
       try {
-        await linkSpokeUserToHub(app.id, { name: data.name, email: data.email, password: data.password })
+        await linkSpokeUserToHub(app.id, { name: data.name, email: createEmail, password: data.password })
       } catch (e) {
         console.error('Sinkron user spoke -> hub gagal:', e)
       }

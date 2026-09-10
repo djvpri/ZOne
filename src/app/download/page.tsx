@@ -39,7 +39,7 @@ const downloads: Record<Platform, AppDownload[]> = {
     { id: 'zone',      name: 'ZOne Mobile',  description: 'SSO hub: login QR, Face ID & kelola akun',         version: '1.0.0', size: '24 MB', color: 'from-blue-500 to-purple-600',  driveUrl: null },
     { id: 'zabsen',    name: 'ZAbsen',       description: 'Absensi & HR management karyawan',                  version: '1.0.0', size: '18 MB', color: 'from-teal-500 to-cyan-600',    driveUrl: null },
     { id: 'zresto',    name: 'ZResto',       description: 'Aplikasi order menu & kasir mobile',                version: '1.0.0', size: '22 MB', color: 'from-red-500 to-rose-600',     driveUrl: null },
-    { id: 'zrooms',    name: 'ZRooms',       description: 'Booking workspace & penginapan',                    version: '1.0.0', size: '16 MB', color: 'from-violet-500 to-purple-600',driveUrl: null },
+    { id: 'zrooms',    name: 'ZXRoom',       description: 'Booking workspace & penginapan',                    version: '1.0.0', size: '16 MB', color: 'from-violet-500 to-purple-600',driveUrl: null },
     { id: 'zwisata',   name: 'ZWisata',      description: 'Manajemen wisata & laporan pendapatan',             version: '1.0.0', size: '19 MB', color: 'from-emerald-500 to-green-600',driveUrl: null },
     { id: 'ztransport',name: 'ZTransport',   description: 'POS tiket bus & travel, QR boarding',              version: '1.0.0', size: '21 MB', color: 'from-sky-500 to-blue-600',     driveUrl: null },
     { id: 'zshield',   name: 'ZShield',     description: 'Link protection & security device membership',       version: '0.4.1', size: '8 MB',  color: 'from-lime-500 to-green-600',   driveUrl: 'https://github.com/djvpri/zsafe_android/releases/latest/download/ZShield-v0.4.1.apk' },
@@ -48,7 +48,7 @@ const downloads: Record<Platform, AppDownload[]> = {
     { id: 'zone',   name: 'ZOne Mobile', description: 'SSO hub: login QR, Face ID & kelola akun',  version: '1.0.0', size: '28 MB', color: 'from-blue-500 to-purple-600',  driveUrl: null },
     { id: 'zabsen', name: 'ZAbsen',      description: 'Absensi & HR management karyawan',           version: '1.0.0', size: '22 MB', color: 'from-teal-500 to-cyan-600',    driveUrl: null },
     { id: 'zresto', name: 'ZResto',      description: 'Aplikasi order menu & kasir mobile',         version: '1.0.0', size: '26 MB', color: 'from-red-500 to-rose-600',     driveUrl: null },
-    { id: 'zrooms', name: 'ZRooms',      description: 'Booking workspace & penginapan',             version: '1.0.0', size: '20 MB', color: 'from-violet-500 to-purple-600',driveUrl: null },
+    { id: 'zrooms', name: 'ZXRoom',      description: 'Booking workspace & penginapan',             version: '1.0.0', size: '20 MB', color: 'from-violet-500 to-purple-600',driveUrl: null },
   ],
 }
 

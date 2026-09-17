@@ -9,7 +9,7 @@ const URLS = {
   zbengkel: 'https://zbengkel.zomet.my.id',
   zlaundry: 'https://zlaundry.zomet.my.id',
   zprint: 'https://zprint.zomet.my.id',
-  zrooms: 'https://z-rooms.zomet.my.id',
+  zrooms: 'https://zxroom.zomet.my.id',
   zbilliar: 'https://zbilliar.zomet.my.id',
   ztrans: 'https://ztrans.zomet.my.id',
   zpos: 'https://zpos.zomet.my.id',

@@ -37,10 +37,18 @@ async function migrate() {
   await run(`INSERT INTO "SiteSettings" (key, value, "updatedAt") VALUES ('maintenance_enabled', 'false', now()) ON CONFLICT (key) DO NOTHING`)
   await run(`INSERT INTO "SiteSettings" (key, value, "updatedAt") VALUES ('maintenance_message', 'Sistem sedang dalam pemeliharaan. Beberapa fitur mungkin tidak dapat diakses. Terima kasih atas pengertian Anda.', now()) ON CONFLICT (key) DO NOTHING`)
 
-// role kolom adalah enum "Role" (USER/ADMIN) — tak ada data legacy lowercase
-// yang bisa tersimpan. Query normalisasi legacy ('admin'/'staff') tiap startup
-// lempar error 22P02 (nilai bukan anggota enum). Dihapus: tak berfungsi.
-console.log('Migrations done ✓')
+  // Alamat app di tabel App dipakai SSO (/api/sso/[slug] redirect ke app.url).
+  // Domain lama z-rooms.zomet.my.id sudah NXDOMAIN sejak ZXRoom pindah ke
+  // zxroom.zomet.my.id, jadi SSO ke Z-Rooms mati (redirect ke host tak ada).
+  // Guard `AND url=...` bikin idempoten: hanya baris yang masih salah diubah,
+  // dan tak menimpa kalau admin sudah menggantinya sendiri lewat /manage.
+  await run(`UPDATE "App" SET url='https://zxroom.zomet.my.id' WHERE slug='zrooms' AND url='https://z-rooms.zomet.my.id'`)
+  await run(`UPDATE "App" SET url='https://zxroom.zomet.my.id' WHERE slug='z-rooms' AND url='https://z-rooms.zomet.my.id'`)
+
+  // role kolom adalah enum "Role" (USER/ADMIN) — tak ada data legacy lowercase
+  // yang bisa tersimpan. Query normalisasi legacy ('admin'/'staff') tiap startup
+  // lempar error 22P02 (nilai bukan anggota enum). Dihapus: tak berfungsi.
+  console.log('Migrations done ✓')
 }
 
 migrate()

@@ -37,6 +37,22 @@ function fmtTgl(v?: string | null): string {
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+// Opsi role berbeda per app. AcuMedis (klinik) memakai owner/practitioner/admin,
+// app lain memakai USER/ADMIN. Daftar ini harus cocok dengan yang divalidasi
+// endpoint /api/admin/cross-app milik app tujuan.
+const ROLE_OPTIONS: Record<string, { value: string; label: string }[]> = {
+  acumedis: [
+    { value: 'owner', label: 'Owner' },
+    { value: 'practitioner', label: 'Praktisi' },
+    { value: 'admin', label: 'Admin' },
+  ],
+}
+const DEFAULT_ROLE_OPTIONS = [
+  { value: 'USER', label: 'User' },
+  { value: 'ADMIN', label: 'Admin' },
+]
+const roleOptions = (slug: string) => ROLE_OPTIONS[slug] || DEFAULT_ROLE_OPTIONS
+
 export default function ManageContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -59,7 +75,7 @@ export default function ManageContent() {
 
   const [newTenantName, setNewTenantName] = useState('')
   const [showAddUser, setShowAddUser] = useState(false)
-  const [newUser, setNewUser] = useState({ name: '', email: '', password: '', tenantId: '' })
+  const [newUser, setNewUser] = useState({ name: '', email: '', password: '', tenantId: '', role: '' })
   const [userLoading, setUserLoading] = useState(false)
 
   const isAdmin = (session?.user as any)?.role === 'ADMIN'
@@ -428,10 +444,11 @@ export default function ManageContent() {
       await call('create', {
         name: newUser.name, password: newUser.password,
         tenantId: newUser.tenantId || undefined,
+        role: newUser.role || undefined,
       }, newUser.email)
       flash(`User "${newUser.name}" ditambahkan`)
       setShowAddUser(false)
-      setNewUser({ name: '', email: '', password: '', tenantId: '' })
+      setNewUser({ name: '', email: '', password: '', tenantId: '', role: '' })
       fetchData(activeApp)
     } catch (err: any) { setError(err.message) }
     finally { setUserLoading(false) }
@@ -976,8 +993,9 @@ export default function ManageContent() {
                         {u.role && (
                           <select value={u.role} onChange={(e) => handleUpdateRole(u.email, u.name, e.target.value)}
                             className="text-[10px] px-2 py-1 bg-slate-800 text-slate-300 border border-slate-600 rounded-lg cursor-pointer hover:border-slate-500">
-                            <option value="USER">User</option>
-                            <option value="ADMIN">Admin</option>
+                            {roleOptions(activeApp).map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
                           </select>
                         )}
                         {u.email && (
@@ -1036,6 +1054,15 @@ export default function ManageContent() {
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm">
                   <option value="">Tanpa tenant</option>
                   {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              )}
+              {ROLE_OPTIONS[activeApp] && (
+                <select value={newUser.role || ROLE_OPTIONS[activeApp][0].value}
+                  onChange={e => setNewUser({ ...newUser, role: e.target.value })}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm">
+                  {roleOptions(activeApp).map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
                 </select>
               )}
               <div className="flex gap-2 pt-2">

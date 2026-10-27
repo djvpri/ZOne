@@ -45,6 +45,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
       allowDangerousEmailAccountLinking: true,
       checks: ['state'], // disable PKCE - fix cookie issue di Railway
+      // Endpoint eksplisit = lewati OIDC discovery. Wajib: discovery doc Google
+      // mengaku `authorization_response_iss_parameter_supported: true` (RFC 9207),
+      // sehingga oauth4webapi mewajibkan param `iss` di callback — padahal Google
+      // tidak mengirimnya. Efeknya callback mati dengan
+      // `OperationProcessingError: response parameter "iss" (issuer) missing`
+      // yang Auth.js lempar jadi error=Configuration (halaman 500).
+      authorization: { url: 'https://accounts.google.com/o/oauth2/v2/auth', params: { scope: 'openid profile email' } },
+      token: 'https://oauth2.googleapis.com/token',
+      userinfo: 'https://openidconnect.googleapis.com/v1/userinfo',
     }),
     Credentials({
       name: 'credentials',

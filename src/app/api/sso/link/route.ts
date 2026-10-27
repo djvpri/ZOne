@@ -9,9 +9,9 @@ import { getCrossAppSecret } from '@/lib/secrets'
  * Dipakai halaman /link: user yang sudah login di Z One menyetujui kode
  * device-code, lalu server Z One meng-claim kode itu ke API AcuMedis.
  *
- * Server tujuan diambil dari App.url di database (slug = 'zmedics').
+ * Server tujuan diambil dari App.url di database (slug = 'acumedis').
  */
-const APP_SLUG = process.env.SSO_LINK_APP_SLUG || 'zmedics'
+const APP_SLUG = process.env.SSO_LINK_APP_SLUG || 'acumedis'
 
 export async function POST(req: NextRequest) {
   const session = await auth()

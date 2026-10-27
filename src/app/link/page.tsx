@@ -10,8 +10,10 @@ import { useSearchParams } from 'next/navigation'
 function LinkContent() {
   const searchParams = useSearchParams()
   const code = (searchParams.get('code') || '').toUpperCase().trim()
+  const isMobile = searchParams.get('redirect') === 'mobile'
   const [state, setState] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
   const [msg, setMsg] = useState('')
+  const [deepLink, setDeepLink] = useState('')
 
   useEffect(() => {
     if (!code) {
@@ -31,6 +33,11 @@ function LinkContent() {
       const data = await res.json().catch(() => ({}))
       if (res.ok && data.ok) {
         setState('ok')
+        if (isMobile && data.deepLink) {
+          setDeepLink(data.deepLink)
+          // Kembali ke app otomatis; kalau tidak terpasang, tombol manual di bawah tetap ada.
+          window.location.href = data.deepLink
+        }
       } else {
         setState('error')
         setMsg(data.error || 'Gagal menghubungkan perangkat.')
@@ -51,6 +58,14 @@ function LinkContent() {
             <p className="text-sm text-gray-500">
               Kembali ke aplikasi AcuMedis di HP kamu. Proses masuk selesai otomatis dalam beberapa detik.
             </p>
+            {deepLink ? (
+              <a
+                href={deepLink}
+                className="inline-block mt-4 text-teal-700 text-sm font-semibold underline"
+              >
+                Buka aplikasi AcuMedis
+              </a>
+            ) : null}
           </>
         ) : state === 'error' ? (
           <>

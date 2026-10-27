@@ -13,7 +13,7 @@ const URLS = {
   zbilliar: 'https://zbilliar.zomet.my.id',
   ztrans: 'https://ztrans.zomet.my.id',
   zpos: 'https://zpos.zomet.my.id',
-  zmedics: 'https://zmedics.zomet.my.id',
+  acumedis: 'https://fctqy79kuiw9c7cddjfdcsgg.103.93.129.94.sslip.io',
   zface: 'https://zface.zomet.my.id',
   zabsen: 'https://zabsen.zomet.my.id',
   zwisata: 'https://zwisata.zomet.my.id',

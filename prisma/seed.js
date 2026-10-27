@@ -14,7 +14,7 @@ const APPS = [
   { slug: 'ztrader', name: 'Z-Trader', description: 'Trading Dashboard — XAUUSD & analisis', icon: '📈', url: '#', color: '#f59e0b', category: 'finance', order: 21 },
   { slug: 'zface', name: 'Z-Face', description: 'Face Recognition — identifikasi wajah', icon: '🔐', url: '#', color: '#6366f1', category: 'identity', order: 30 },
   { slug: 'zanalytics', name: 'Z-Analytics', description: 'Business Intelligence — dashboard & laporan', icon: '📊', url: '#', color: '#14b8a6', category: 'analytics', order: 40 },
-  { slug: 'zmedics', name: 'Z-Medics', description: 'Kesehatan — rekam medis & konsultasi', icon: '🏥', url: '#', color: '#ec4899', category: 'health', order: 50 },
+  { slug: 'acumedis', name: 'AcuMedis', description: 'Klinik TCM — rekam medis & terapi', icon: '🏥', url: 'https://fctqy79kuiw9c7cddjfdcsgg.103.93.129.94.sslip.io', color: '#ec4899', category: 'health', order: 50 },
   { slug: 'zomet', name: 'Zomet', description: 'Platform bisnis & manajemen', icon: '🚀', url: '#', color: '#8b5cf6', category: 'platform', order: 60 },
 ]
 

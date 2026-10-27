@@ -6,7 +6,7 @@ const APPS = [
   { slug: 'zgold', name: 'ZGold', description: 'POS toko perhiasan', icon: 'gem', url: 'https://zgold.zomet.my.id', color: '#d97706', category: 'pos', order: 1 },
   { slug: 'zresto', name: 'Z-Resto', description: 'Manajemen restoran', icon: 'cup-hot', url: 'https://zresto.zomet.my.id', color: '#059669', category: 'pos', order: 2 },
   { slug: 'zbengkel', name: 'ZBengkel', description: 'Manajemen bengkel', icon: 'wrench-adjustable', url: 'https://zbengkel.zomet.my.id', color: '#dc2626', category: 'service', order: 3 },
-  { slug: 'zmedics', name: 'Z-Medics', description: 'Rekam medis digital', icon: 'heart-pulse', url: 'https://zmedics.zomet.my.id', color: '#7c3aed', category: 'health', order: 4 },
+  { slug: 'acumedis', name: 'AcuMedis', description: 'Rekam medis klinik TCM', icon: 'heart-pulse', url: 'https://fctqy79kuiw9c7cddjfdcsgg.103.93.129.94.sslip.io', color: '#0e7490', category: 'health', order: 4 },
   { slug: 'zrooms', name: 'Z-Rooms', description: 'Manajemen properti', icon: 'house-door', url: 'https://zxroom.zomet.my.id', color: '#0891b2', category: 'property', order: 5 },
   { slug: 'zabsen', name: 'Z-Absen', description: 'Absensi digital', icon: 'clipboard-check', url: 'https://z-absen.zomet.my.id', color: '#65a30d', category: 'hr', order: 6 },
   { slug: 'zface', name: 'Z-Face', description: 'Pengenalan wajah', icon: 'person-bounding-box', url: 'https://zface.zomet.my.id', color: '#9333ea', category: 'ai', order: 7 },

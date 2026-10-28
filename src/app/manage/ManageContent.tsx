@@ -350,6 +350,24 @@ export default function ManageContent() {
     } catch (err: any) { setError(err.message) }
   }
 
+  /**
+   * Terbitkan lisensi bertanda tangan untuk klinik ini. Perpanjangan dihitung
+   * dari tanggal berakhir yang masih berlaku, bukan dari hari ini.
+   */
+  const handleLicense = async (tenantId: string, plan: string, days: number) => {
+    try {
+      const r = await fetch('/api/admin/license', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ app: activeApp, tenantId, plan, days, action: 'extend' }),
+      })
+      const j = await r.json().catch(() => ({}))
+      if (!r.ok) throw new Error(j.error || 'Gagal menerbitkan lisensi')
+      flash(`Lisensi ${days} hari → ${new Date(j.expiresAt).toLocaleDateString('id-ID')}`)
+      fetchData(activeApp)
+    } catch (err: any) { setError(err.message) }
+  }
+
   const handleDeleteTenant = async (tenantId: string, name: string) => {
     if (!confirm(`Nonaktifkan tenant "${name}"?\nSemua user di tenant ini tidak akan bisa login, tapi bisa diaktifkan ulang kapan saja. Data tidak dihapus.`)) return
     try {
@@ -990,6 +1008,15 @@ export default function ManageContent() {
                               t.plan === p ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500'
                             }`}>
                             {p.charAt(0).toUpperCase() + p.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                      {/* perpanjangan lisensi: menerbitkan token bertanda tangan ke app tujuan */}
+                      <div className="grid grid-cols-3 gap-1.5 mb-2">
+                        {[{ d: 30, l: '1 bln' }, { d: 90, l: '3 bln' }, { d: 365, l: '12 bln' }].map((x) => (
+                          <button key={x.d} onClick={() => handleLicense(t.id, t.plan || 'starter', x.d)}
+                            className="text-[10px] px-2 py-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-lg hover:bg-amber-500/20">
+                            +{x.l}
                           </button>
                         ))}
                       </div>

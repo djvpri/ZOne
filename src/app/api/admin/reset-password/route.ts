@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { randomBytes } from 'crypto'
+import { randomInt } from 'crypto'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
@@ -12,10 +12,15 @@ import { prisma } from '@/lib/prisma'
  * - mode 'generate' → sistem membuat password sementara acak, dikembalikan SEKALI
  * Keduanya memasang mustChangePassword = true supaya user wajib menggantinya.
  */
-function tempPassword() {
-  // hindari karakter ambigu (0/O, 1/l/I) karena sering dikirim lewat WhatsApp
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
-  return Array.from({ length: 10 }, () => alphabet[randomBytes(1)[0] % alphabet.length]).join('')
+// Hindari karakter ambigu (0/O, 1/l/I) karena password sering dikirim lewat WhatsApp.
+const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
+
+function tempPassword(len = 10) {
+  // loop biasa, bukan Array.from + closure: minifier Next sempat merusak
+  // referensi variabel di dalam closure dan menghasilkan "alphabet is not defined".
+  let out = ''
+  for (let i = 0; i < len; i++) out += ALPHABET[randomInt(0, ALPHABET.length)]
+  return out
 }
 
 export async function POST(req: NextRequest) {

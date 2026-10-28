@@ -438,62 +438,69 @@ export default function ManageContent() {
 
   const [credInfo, setCredInfo] = useState<{ title: string; lines: string[] } | null>(null)
 
-  /** Reset password user: prompt kosong = sistem bikin password sementara. */
+  /** Reset password untuk app yang SEDANG dipilih saja (bukan Z One). */
   const handleResetPassword = async (email: string | undefined, name: string) => {
     if (!email) return
+    const appName = apps.find(a => a.slug === activeApp)?.name || activeApp
     const typed = window.prompt(
-      `Password baru untuk "${name}" (${email}).\n\n` +
+      `Password ${appName} untuk "${name}" (${email}).\n\n` +
         `Kosongkan untuk dibuat otomatis oleh sistem.\n` +
-        `User wajib mengganti password saat login berikutnya.`,
+        `Password ini hanya berlaku di ${appName} — tidak mengubah password Z One.`,
       ''
     )
-    if (typed === null) return // dibatalkan
+    if (typed === null) return
     const mode = typed.trim() ? 'set' : 'generate'
     if (mode === 'set' && typed.trim().length < 8) {
       setError('Password baru minimal 8 karakter')
       return
     }
     try {
-      const res = await fetch('/api/admin/reset-password', {
+      const res = await fetch('/api/admin/cross-app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, mode, password: mode === 'set' ? typed.trim() : undefined }),
+        body: JSON.stringify({
+          app: activeApp,
+          action: 'resetPassword',
+          email,
+          data: { mode, password: mode === 'set' ? typed.trim() : undefined },
+        }),
       })
       const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error || 'Gagal reset password')
+      if (!res.ok) throw new Error(data.error || 'App menolak permintaan')
       setCredInfo({
-        title: 'Password diganti',
+        title: `Password ${appName} diganti`,
         lines: [
           `Akun: ${email}`,
           ...(data.password ? [`Password sementara: ${data.password}`] : []),
+          `Berlaku hanya di ${appName}. Password Z One tidak berubah.`,
           'Kirim ke user lewat WhatsApp. Password ini tidak bisa dilihat lagi.',
-          'User wajib mengganti password saat login berikutnya.',
         ],
       })
-    } catch (err: any) { setError(`Gagal reset password: ${err.message}`) }
+    } catch (err: any) { setError(`Gagal reset password ${appName}: ${err.message}`) }
   }
 
-  /** Bikin kode reset 6 digit (berlaku 15 menit) untuk dikirim manual. */
+  /** Kode reset 6 digit untuk app yang sedang dipilih (berlaku 15 menit). */
   const handleResetCode = async (email: string | undefined, name: string) => {
     if (!email) return
+    const appName = apps.find(a => a.slug === activeApp)?.name || activeApp
     try {
-      const res = await fetch('/api/admin/reset-code', {
+      const res = await fetch('/api/admin/cross-app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ app: activeApp, action: 'resetCode', email, data: {} }),
       })
       const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error || 'Gagal membuat kode')
+      if (!res.ok) throw new Error(data.error || 'App menolak permintaan')
       setCredInfo({
-        title: 'Kode reset dibuat',
+        title: `Kode reset ${appName}`,
         lines: [
           `Akun: ${name} (${email})`,
           `Kode: ${data.code}`,
-          `Berlaku ${data.expiresInMinutes} menit, sekali pakai.`,
-          'Kirim ke user. Mereka membukanya di zone.zomet.my.id/reset',
+          `Berlaku ${data.expiresInMinutes} menit, sekali pakai, hanya untuk ${appName}.`,
+          `User membukanya di ${data.resetUrl || 'halaman reset app'}`,
         ],
       })
-    } catch (err: any) { setError(`Gagal membuat kode: ${err.message}`) }
+    } catch (err: any) { setError(`Gagal membuat kode ${appName}: ${err.message}`) }
   }
 
   const handleAddUser = async (e: React.FormEvent) => {

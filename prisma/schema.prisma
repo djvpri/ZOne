@@ -16,6 +16,8 @@ model User {
   avatar        String?
   faceId        String?   @unique  // Link ke ZFace face_id
   role          Role      @default(USER)
+  mustChangePassword Boolean @default(false)
+  passwordChangedAt  DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]

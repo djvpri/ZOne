@@ -436,6 +436,66 @@ export default function ManageContent() {
     } catch (err: any) { setError(`Gagal ubah role: ${err.message}`) }
   }
 
+  const [credInfo, setCredInfo] = useState<{ title: string; lines: string[] } | null>(null)
+
+  /** Reset password user: prompt kosong = sistem bikin password sementara. */
+  const handleResetPassword = async (email: string | undefined, name: string) => {
+    if (!email) return
+    const typed = window.prompt(
+      `Password baru untuk "${name}" (${email}).\n\n` +
+        `Kosongkan untuk dibuat otomatis oleh sistem.\n` +
+        `User wajib mengganti password saat login berikutnya.`,
+      ''
+    )
+    if (typed === null) return // dibatalkan
+    const mode = typed.trim() ? 'set' : 'generate'
+    if (mode === 'set' && typed.trim().length < 8) {
+      setError('Password baru minimal 8 karakter')
+      return
+    }
+    try {
+      const res = await fetch('/api/admin/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, mode, password: mode === 'set' ? typed.trim() : undefined }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Gagal reset password')
+      setCredInfo({
+        title: 'Password diganti',
+        lines: [
+          `Akun: ${email}`,
+          ...(data.password ? [`Password sementara: ${data.password}`] : []),
+          'Kirim ke user lewat WhatsApp. Password ini tidak bisa dilihat lagi.',
+          'User wajib mengganti password saat login berikutnya.',
+        ],
+      })
+    } catch (err: any) { setError(`Gagal reset password: ${err.message}`) }
+  }
+
+  /** Bikin kode reset 6 digit (berlaku 15 menit) untuk dikirim manual. */
+  const handleResetCode = async (email: string | undefined, name: string) => {
+    if (!email) return
+    try {
+      const res = await fetch('/api/admin/reset-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Gagal membuat kode')
+      setCredInfo({
+        title: 'Kode reset dibuat',
+        lines: [
+          `Akun: ${name} (${email})`,
+          `Kode: ${data.code}`,
+          `Berlaku ${data.expiresInMinutes} menit, sekali pakai.`,
+          'Kirim ke user. Mereka membukanya di zone.zomet.my.id/reset',
+        ],
+      })
+    } catch (err: any) { setError(`Gagal membuat kode: ${err.message}`) }
+  }
+
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault()
     setUserLoading(true)
@@ -999,6 +1059,18 @@ export default function ManageContent() {
                           </select>
                         )}
                         {u.email && (
+                          <>
+                            <button onClick={() => handleResetPassword(u.email, u.name)} title="Reset password"
+                              className="text-[10px] px-2 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-lg">
+                              <Key size={12} className="inline mr-1" />Password
+                            </button>
+                            <button onClick={() => handleResetCode(u.email, u.name)} title="Buat kode reset 15 menit"
+                              className="text-[10px] px-2 py-1 bg-sky-500/10 text-sky-400 border border-sky-500/20 rounded-lg">
+                              Kode
+                            </button>
+                          </>
+                        )}
+                        {u.email && (
                           u.active === false ? (
                             <button onClick={() => handleReactivateUser(u.email, u.name)}
                               className="text-[10px] px-2 py-1 bg-green-500/10 text-green-400 border border-green-500/20 rounded-lg">
@@ -1072,6 +1144,26 @@ export default function ManageContent() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {credInfo && (
+        <div className="fixed inset-0 bg-black/60 z-40 flex items-center justify-center p-4" onClick={() => setCredInfo(null)}>
+          <div onClick={e => e.stopPropagation()} className="bg-slate-900 border border-slate-700 rounded-2xl p-5 w-full max-w-sm">
+            <h3 className="font-bold mb-3 flex items-center gap-2 text-white"><Key size={16} />{credInfo.title}</h3>
+            <div className="space-y-2 mb-4">
+              {credInfo.lines.map((l, i) => (
+                <p key={i} className={i === 1 && /Password sementara|Kode:/.test(l)
+                  ? 'text-lg font-bold tracking-wider text-emerald-300 break-all select-all'
+                  : 'text-xs text-slate-300'}>
+                  {l}
+                </p>
+              ))}
+            </div>
+            <button onClick={() => setCredInfo(null)}
+              className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold py-2.5 rounded-xl">
+              Tutup
+            </button>
           </div>
         </div>
       )}

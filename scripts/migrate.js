@@ -12,6 +12,12 @@ async function migrate() {
   await run(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS avatar TEXT`)
   await run(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS bio TEXT`)
   await run(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "faceId" TEXT`)
+  // Reset password: paksa ganti setelah admin reset + jejak waktu ganti terakhir
+  await run(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "mustChangePassword" BOOLEAN NOT NULL DEFAULT false`)
+  await run(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "passwordChangedAt" TIMESTAMP`)
+  // Kode reset sekali pakai (tanpa email): dibuat admin, dipakai user di /reset
+  await run(`CREATE TABLE IF NOT EXISTS "PasswordReset" (id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),"codeHash" TEXT NOT NULL UNIQUE,"userId" TEXT NOT NULL,email TEXT NOT NULL,"expiresAt" TIMESTAMP NOT NULL,"usedAt" TIMESTAMP,"createdBy" TEXT,"createdAt" TIMESTAMP NOT NULL DEFAULT now(),CONSTRAINT "PasswordReset_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"(id) ON DELETE CASCADE)`)
+  await run(`CREATE INDEX IF NOT EXISTS "PasswordReset_expiresAt_idx" ON "PasswordReset"("expiresAt")`)
   await run(`DO $x$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='User_faceId_key') THEN ALTER TABLE "User" ADD CONSTRAINT "User_faceId_key" UNIQUE ("faceId"); END IF; END $x$`)
   await run(`CREATE TABLE IF NOT EXISTS "UserApp" (id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),"userId" TEXT NOT NULL,"appId" TEXT NOT NULL,active BOOLEAN NOT NULL DEFAULT true,"createdAt" TIMESTAMP NOT NULL DEFAULT now(),CONSTRAINT "UserApp_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"(id) ON DELETE CASCADE,CONSTRAINT "UserApp_appId_fkey" FOREIGN KEY ("appId") REFERENCES "App"(id) ON DELETE CASCADE,CONSTRAINT "UserApp_userId_appId_key" UNIQUE ("userId","appId"))`)
   await run(`CREATE TABLE IF NOT EXISTS "Activity" (id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),"userId" TEXT NOT NULL,action TEXT NOT NULL,detail TEXT,"appSlug" TEXT,"createdAt" TIMESTAMP NOT NULL DEFAULT now(),CONSTRAINT "Activity_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"(id) ON DELETE CASCADE)`)

@@ -261,6 +261,24 @@ export default function DashboardPage() {
   if (!session) return null
 
   const user = session.user as any
+
+  // Setelah admin reset password, user wajib mengganti sebelum memakai dashboard.
+  if (user.mustChangePassword) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-slate-900 px-4">
+        <div className="w-full max-w-sm bg-slate-800/60 border border-slate-700 rounded-2xl p-6 text-center">
+          <h1 className="text-lg font-bold text-white mb-2">Ganti password dulu</h1>
+          <p className="text-xs text-slate-400 mb-5">
+            Password akunmu baru direset oleh admin. Demi keamanan, tentukan password sendiri sebelum melanjutkan.
+          </p>
+          <a href="/profile"
+            className="block w-full h-11 leading-[44px] rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold">
+            Buka halaman profil
+          </a>
+        </div>
+      </div>
+    )
+  }
   const grouped: Record<string, UserApp[]> = {}
   apps.forEach(ua => {
     const cat = ua.app.category

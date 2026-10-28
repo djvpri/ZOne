@@ -1,36 +1,64 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 
+/**
+ * POST /api/auth/change-password   { currentPassword, newPassword }
+ *
+ * Email diambil dari SESI, bukan dari body — versi lama menerima email dari
+ * klien, sehingga endpoint tidak memastikan pemohon adalah pemilik akun.
+ * Setelah berhasil: sesi lama dicabut (kalau password bocor, penyerang
+ * langsung terlempar) dan mustChangePassword dimatikan.
+ */
 export async function POST(req: Request) {
+  const session = await auth()
+  const me = session?.user as any
+  if (!me?.email) {
+    return NextResponse.json({ error: 'Sesi tidak ditemukan. Login ulang.' }, { status: 401 })
+  }
+
   try {
-    const { email, currentPassword, newPassword } = await req.json()
+    const { currentPassword, newPassword } = await req.json()
 
-    if (!email || !currentPassword || !newPassword) {
-      return NextResponse.json({ error: 'All fields required' }, { status: 400 })
+    if (!currentPassword || !newPassword) {
+      return NextResponse.json({ error: 'Password lama dan baru wajib diisi' }, { status: 400 })
+    }
+    if (String(newPassword).length < 8) {
+      return NextResponse.json({ error: 'Password baru minimal 8 karakter' }, { status: 400 })
     }
 
-    if (newPassword.length < 6) {
-      return NextResponse.json({ error: 'Password baru minimal 6 karakter' }, { status: 400 })
-    }
-
+    const email = String(me.email).toLowerCase()
     const user = await prisma.user.findUnique({ where: { email } })
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Pengguna tidak ditemukan' }, { status: 404 })
     }
 
-    const valid = await bcrypt.compare(currentPassword, user.password)
+    const valid = await bcrypt.compare(String(currentPassword), user.password)
     if (!valid) {
       return NextResponse.json({ error: 'Password saat ini salah' }, { status: 401 })
     }
+    if (String(currentPassword) === String(newPassword)) {
+      return NextResponse.json({ error: 'Password baru tidak boleh sama dengan yang lama' }, { status: 400 })
+    }
 
-    const hashed = await bcrypt.hash(newPassword, 10)
     await prisma.user.update({
-      where: { email },
-      data: { password: hashed },
+      where: { id: user.id },
+      data: {
+        password: await bcrypt.hash(String(newPassword), 10),
+        mustChangePassword: false,
+        passwordChangedAt: new Date(),
+      },
     })
 
-    return NextResponse.json({ success: true, message: 'Password berhasil diganti' })
+    try {
+      await prisma.$executeRawUnsafe(`DELETE FROM "Session" WHERE "userId" = $1`, user.id)
+    } catch { /* strategi JWT: tidak ada tabel sesi */ }
+
+    return NextResponse.json({
+      ok: true,
+      message: 'Password berhasil diganti. Sesi lain sudah dikeluarkan.',
+    })
   } catch (error) {
     console.error('Change password error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

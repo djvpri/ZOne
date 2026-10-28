@@ -145,13 +145,13 @@ export default function ProfilePage() {
       const res = await fetch('/api/auth/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: user.email, currentPassword, newPassword }),
+        body: JSON.stringify({ currentPassword, newPassword }),
       })
       const data = await res.json()
 
       if (!res.ok) throw new Error(data.error || 'Gagal ganti password')
 
-      setSuccess('Password berhasil diganti')
+      setSuccess('Password berhasil diganti. Sesi lain sudah dikeluarkan — login ulang kalau perangkat lain ikut keluar.')
       setCurrentPassword('')
       setNewPassword('')
     } catch (err) {

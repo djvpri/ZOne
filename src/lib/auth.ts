@@ -219,11 +219,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const { prisma } = require('@/lib/prisma')
           const dbUser = await prisma.user.findUnique({
             where: { id: token.id as string },
-            select: { role: true, faceId: true },
+            select: { role: true, faceId: true, mustChangePassword: true },
           })
           if (dbUser) {
             token.role = dbUser.role
             if (dbUser.faceId) token.faceId = dbUser.faceId
+            // dibaca dari DB tiap refresh, jadi setelah user ganti password
+            // sendiri, penanda ini hilang tanpa perlu login ulang
+            token.mustChangePassword = !!dbUser.mustChangePassword
           }
         } catch {}
       }
@@ -234,6 +237,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.id as string
         session.user.role = token.role as string
         ;(session.user as any).faceId = token.faceId || null
+        ;(session.user as any).mustChangePassword = !!token.mustChangePassword
       }
       return session
     },

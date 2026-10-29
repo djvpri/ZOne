@@ -11,6 +11,8 @@ function LinkContent() {
   const searchParams = useSearchParams()
   const code = (searchParams.get('code') || '').toUpperCase().trim()
   const isMobile = searchParams.get('redirect') === 'mobile'
+  // app menentukan server tujuan & skema deep link (acumedis / zxcarwash)
+  const app = (searchParams.get('app') || 'acumedis').toLowerCase().trim()
   const [state, setState] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
   const [msg, setMsg] = useState('')
   const [deepLink, setDeepLink] = useState('')
@@ -28,7 +30,7 @@ function LinkContent() {
       const res = await fetch('/api/sso/link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, app }),
       })
       const data = await res.json().catch(() => ({}))
       if (res.ok && data.ok) {
@@ -56,14 +58,14 @@ function LinkContent() {
             <div className="text-4xl mb-3">✅</div>
             <p className="font-semibold text-gray-900 mb-1">Perangkat terhubung</p>
             <p className="text-sm text-gray-500">
-              Kembali ke aplikasi AcuMedis di HP kamu. Proses masuk selesai otomatis dalam beberapa detik.
+              Kembali ke aplikasi di HP kamu. Proses masuk selesai otomatis dalam beberapa detik.
             </p>
             {deepLink ? (
               <a
                 href={deepLink}
                 className="inline-block mt-4 text-teal-700 text-sm font-semibold underline"
               >
-                Buka aplikasi AcuMedis
+                Buka aplikasi
               </a>
             ) : null}
           </>

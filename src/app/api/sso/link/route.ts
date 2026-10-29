@@ -13,6 +13,10 @@ import { getCrossAppSecret } from '@/lib/secrets'
  */
 const APP_SLUG = process.env.SSO_LINK_APP_SLUG || 'acumedis'
 
+// Daftar app yang boleh memakai jalur /link ini. Slug lain ditolak supaya
+// halaman /link tidak bisa dipakai menembak server app sembarang.
+const IZIN = ['acumedis', 'zxcarwash']
+
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.email) {
@@ -25,10 +29,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'Format kode tidak valid' }, { status: 400 })
   }
 
-  const app = await prisma.app.findUnique({ where: { slug: APP_SLUG } })
+  // app dikirim app Android lewat ?app= di verifyUrl. Tanpa itu, pakai default.
+  const slugDiminta = String(body?.app || APP_SLUG).toLowerCase().trim()
+  const APP_SLUG_AKTIF = IZIN.includes(slugDiminta) ? slugDiminta : APP_SLUG
+
+  const app = await prisma.app.findUnique({ where: { slug: APP_SLUG_AKTIF } })
   if (!app || !app.url || app.url === '#') {
     return NextResponse.json(
-      { ok: false, error: `App "${APP_SLUG}" belum punya URL di Z One` },
+      { ok: false, error: `App "${APP_SLUG_AKTIF}" belum punya URL di Z One` },
       { status: 400 }
     )
   }
@@ -45,16 +53,16 @@ export async function POST(req: NextRequest) {
   }
 
   // hak akses: harus punya UserApp aktif untuk app ini (auto-provision kalau belum ada)
-  const link = user.appLinks.find((ua: { app: { slug: string }; active: boolean }) => ua.app.slug === APP_SLUG)
+  const link = user.appLinks.find((ua: { app: { slug: string }; active: boolean }) => ua.app.slug === APP_SLUG_AKTIF)
   if (!link) {
     await prisma.userApp.create({ data: { userId: user.id, appId: app.id, active: true } })
-    console.log(`[SSO/link] auto-provision: ${user.email} -> ${APP_SLUG}`)
+    console.log(`[SSO/link] auto-provision: ${user.email} -> ${APP_SLUG_AKTIF}`)
   } else if (!link.active) {
     return NextResponse.json({ ok: false, error: 'Akun ini tidak punya akses ke aplikasi' }, { status: 403 })
   }
 
   const token = jwt.sign(
-    { sub: user.id, email: user.email, name: user.name, app: APP_SLUG },
+    { sub: user.id, email: user.email, name: user.name, app: APP_SLUG_AKTIF },
     getCrossAppSecret(),
     { algorithm: 'HS256', expiresIn: '300s' }
   )
@@ -81,5 +89,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  return NextResponse.json({ ok: true, deepLink: `acumedis://sso?token=${encodeURIComponent(token)}` })
+  // Skema deep link mengikuti app tujuan, bukan selalu acumedis.
+  const skema = APP_SLUG_AKTIF === 'zxcarwash' ? 'zxcarwash' : 'acumedis'
+  return NextResponse.json({ ok: true, deepLink: `${skema}://sso?token=${encodeURIComponent(token)}` })
 }
